@@ -10,32 +10,66 @@ function Login() {
   const handleSubmit = (e) => {
     e.preventDefault();
 
-    // Get registered students
+    // =====================================
+    // CHECK STUDENTS
+    // =====================================
+
     const students =
       JSON.parse(localStorage.getItem("students")) || [];
 
-    // Find student
     const student = students.find(
       (item) =>
-        item.email === email &&
+        item.email &&
+        item.email.toLowerCase() === email.toLowerCase() &&
         item.password === password
     );
 
-    // Check login
-    if (!student) {
-      alert("Invalid email or password.");
+    if (student) {
+      // Save logged-in student
+      localStorage.setItem(
+        "loggedInStudent",
+        JSON.stringify(student)
+      );
+
+      alert("Student login successful!");
+
+      navigate("/student/dashboard");
       return;
     }
 
-    // Save logged-in student
-    localStorage.setItem(
-      "loggedInStudent",
-      JSON.stringify(student)
+    // =====================================
+    // CHECK TEACHERS
+    // =====================================
+
+    const teachers =
+      JSON.parse(localStorage.getItem("teachers")) || [];
+
+    const teacher = teachers.find(
+      (item) =>
+        item.email &&
+        item.email.toLowerCase() === email.toLowerCase() &&
+        item.password === password
     );
 
-    alert("Student login successful!");
+    if (teacher) {
+      // Save logged-in teacher
+      localStorage.setItem(
+        "loggedInTeacher",
+        JSON.stringify(teacher)
+      );
 
-    navigate("/student/dashboard");
+      alert("Teacher login successful!");
+
+      // Teacher dashboard will be created next
+      navigate("/teacher/dashboard");
+      return;
+    }
+
+    // =====================================
+    // INVALID LOGIN
+    // =====================================
+
+    alert("Invalid email or password.");
   };
 
   return (
@@ -43,10 +77,12 @@ function Login() {
 
       <div className="auth-card">
 
+        {/* Header */}
+
         <div className="auth-header">
 
           <h1>
-            Student Login
+            Login
           </h1>
 
           <p>
@@ -55,6 +91,8 @@ function Login() {
 
         </div>
 
+
+        {/* Login Form */}
 
         <form onSubmit={handleSubmit}>
 
@@ -100,7 +138,7 @@ function Login() {
           </div>
 
 
-          {/* Login */}
+          {/* Login Button */}
 
           <button
             className="auth-button"
@@ -111,6 +149,8 @@ function Login() {
 
         </form>
 
+
+        {/* Register */}
 
         <p className="auth-footer">
 

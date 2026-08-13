@@ -4,6 +4,7 @@ import { Link } from "react-router-dom";
 function AddTeacher() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [subject, setSubject] = useState("");
   const [qualification, setQualification] = useState("");
   const [experience, setExperience] = useState("");
@@ -12,25 +13,49 @@ function AddTeacher() {
   const handleSubmit = (e) => {
     e.preventDefault();
 
+    // Get existing teachers
+    const existingTeachers =
+      JSON.parse(localStorage.getItem("teachers")) || [];
+
+    // Check if email already exists
+    const emailExists = existingTeachers.some(
+      (teacher) =>
+        teacher.email &&
+        teacher.email.toLowerCase() === email.toLowerCase()
+    );
+
+    if (emailExists) {
+      alert("A teacher with this email already exists.");
+      return;
+    }
+
     // Create new teacher
     const newTeacher = {
       id: Date.now(),
+
+      // Login information
       name: name,
       email: email,
+      password: password,
+
+      // Teacher information
       subject: subject,
       qualification: qualification,
       experience: experience,
+
+      // Default information
       students: "0",
       classes: "0",
       rating: "New",
+
+      // Monthly fee
       fee: Number(fee),
+
+      // Profile
       avatar: "👨‍🏫",
+
       description: `${name} is a new ${subject} teacher on TuitionWeb.`,
     };
-
-    // Get existing teachers from localStorage
-    const existingTeachers =
-      JSON.parse(localStorage.getItem("teachers")) || [];
 
     // Add new teacher
     const updatedTeachers = [
@@ -49,6 +74,7 @@ function AddTeacher() {
     // Clear form
     setName("");
     setEmail("");
+    setPassword("");
     setSubject("");
     setQualification("");
     setExperience("");
@@ -58,7 +84,10 @@ function AddTeacher() {
   return (
     <div className="add-teacher-page">
 
-      {/* Header */}
+      {/* ==============================
+          HEADER
+      ============================== */}
+
       <div className="add-teacher-header">
 
         <div>
@@ -79,12 +108,18 @@ function AddTeacher() {
       </div>
 
 
-      {/* Form Card */}
+      {/* ==============================
+          FORM CARD
+      ============================== */}
+
       <div className="add-teacher-card">
 
         <form onSubmit={handleSubmit}>
 
-          {/* Teacher Name */}
+          {/* ==============================
+              TEACHER NAME
+          ============================== */}
+
           <div className="form-group">
 
             <label>
@@ -95,14 +130,19 @@ function AddTeacher() {
               type="text"
               placeholder="Enter teacher name"
               value={name}
-              onChange={(e) => setName(e.target.value)}
+              onChange={(e) =>
+                setName(e.target.value)
+              }
               required
             />
 
           </div>
 
 
-          {/* Email */}
+          {/* ==============================
+              EMAIL
+          ============================== */}
+
           <div className="form-group">
 
             <label>
@@ -113,14 +153,42 @@ function AddTeacher() {
               type="email"
               placeholder="Enter teacher email"
               value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              onChange={(e) =>
+                setEmail(e.target.value)
+              }
               required
             />
 
           </div>
 
 
-          {/* Subject */}
+          {/* ==============================
+              PASSWORD
+          ============================== */}
+
+          <div className="form-group">
+
+            <label>
+              Password
+            </label>
+
+            <input
+              type="password"
+              placeholder="Create teacher password"
+              value={password}
+              onChange={(e) =>
+                setPassword(e.target.value)
+              }
+              required
+            />
+
+          </div>
+
+
+          {/* ==============================
+              SUBJECT
+          ============================== */}
+
           <div className="form-group">
 
             <label>
@@ -129,7 +197,9 @@ function AddTeacher() {
 
             <select
               value={subject}
-              onChange={(e) => setSubject(e.target.value)}
+              onChange={(e) =>
+                setSubject(e.target.value)
+              }
               required
             >
 
@@ -158,7 +228,10 @@ function AddTeacher() {
           </div>
 
 
-          {/* Qualification */}
+          {/* ==============================
+              QUALIFICATION
+          ============================== */}
+
           <div className="form-group">
 
             <label>
@@ -178,7 +251,10 @@ function AddTeacher() {
           </div>
 
 
-          {/* Experience */}
+          {/* ==============================
+              EXPERIENCE
+          ============================== */}
+
           <div className="form-group">
 
             <label>
@@ -198,7 +274,10 @@ function AddTeacher() {
           </div>
 
 
-          {/* Monthly Fee */}
+          {/* ==============================
+              MONTHLY FEE
+          ============================== */}
+
           <div className="form-group">
 
             <label>
@@ -218,7 +297,10 @@ function AddTeacher() {
           </div>
 
 
-          {/* Submit */}
+          {/* ==============================
+              SUBMIT
+          ============================== */}
+
           <button
             type="submit"
             className="add-teacher-button"

@@ -1,5 +1,10 @@
 import React, { useEffect, useState } from "react";
-import { Link, useSearchParams, useNavigate } from "react-router-dom";
+import {
+  Link,
+  useSearchParams,
+  useNavigate,
+} from "react-router-dom";
+
 import teachers from "../../data/teachers";
 
 function Payment() {
@@ -11,9 +16,9 @@ function Payment() {
 
   const [teacher, setTeacher] = useState(null);
 
-  // ==============================
+  // =========================================
   // GET SELECTED TEACHER
-  // ==============================
+  // =========================================
 
   useEffect(() => {
     const savedTeachers =
@@ -25,17 +30,17 @@ function Payment() {
     ];
 
     const selectedTeacher = allTeachers.find(
-      (teacher) =>
-        String(teacher.id) === String(teacherId)
+      (item) =>
+        String(item.id) === String(teacherId)
     );
 
     setTeacher(selectedTeacher);
   }, [teacherId]);
 
 
-  // ==============================
+  // =========================================
   // PLANS
-  // ==============================
+  // =========================================
 
   const plans = {
     basic: {
@@ -57,13 +62,12 @@ function Payment() {
     },
   };
 
-
   const selectedPlan = plans[plan];
 
 
-  // ==============================
+  // =========================================
   // HANDLE PAYMENT
-  // ==============================
+  // =========================================
 
   const handlePayment = () => {
 
@@ -72,28 +76,48 @@ function Payment() {
       return;
     }
 
-    // Get logged-in student
+
+    // =========================================
+    // GET LOGGED-IN STUDENT
+    // =========================================
+
     const loggedInStudent =
       JSON.parse(
         localStorage.getItem("loggedInStudent")
       );
 
-    // Get existing payments
+
+    if (!loggedInStudent) {
+      alert("Please login as a student first.");
+      navigate("/login");
+      return;
+    }
+
+
+    // =========================================
+    // GET EXISTING PAYMENTS
+    // =========================================
+
     const existingPayments =
-      JSON.parse(localStorage.getItem("payments")) || [];
+      JSON.parse(
+        localStorage.getItem("payments")
+      ) || [];
 
 
-    // Create payment
+    // =========================================
+    // CREATE PAYMENT
+    // =========================================
+
     const newPayment = {
 
       id: Date.now(),
 
       student:
-        loggedInStudent?.name ||
+        loggedInStudent.name ||
         "Student",
 
       studentId:
-        loggedInStudent?.id ||
+        loggedInStudent.id ||
         null,
 
       teacher:
@@ -118,14 +142,18 @@ function Payment() {
         selectedPlan.classes,
 
       date:
-        new Date().toLocaleDateString("en-IN"),
+        new Date().toLocaleDateString(
+          "en-IN"
+        ),
 
       status:
         "Paid",
     };
 
 
-    // Save payment
+    // =========================================
+    // SAVE PAYMENT
+    // =========================================
 
     const updatedPayments = [
       ...existingPayments,
@@ -138,22 +166,110 @@ function Payment() {
     );
 
 
-    // Success message
+    // =========================================
+    // CREATE TEACHER-STUDENT RELATIONSHIP
+    // =========================================
 
-    alert("Payment successful!");
+    const existingRelationships =
+      JSON.parse(
+        localStorage.getItem(
+          "teacherStudents"
+        )
+      ) || [];
 
 
-    // Go to student dashboard
+    // Check if this student already belongs
+    // to this teacher
+
+    const alreadyAssigned =
+      existingRelationships.some(
+        (item) =>
+          String(item.studentId) ===
+            String(loggedInStudent.id) &&
+          String(item.teacherId) ===
+            String(teacher.id)
+      );
+
+
+    if (!alreadyAssigned) {
+
+      const newRelationship = {
+
+        id: Date.now(),
+
+        studentId:
+          loggedInStudent.id,
+
+        student:
+          loggedInStudent.name ||
+          "Student",
+
+        teacherId:
+          teacher.id,
+
+        teacher:
+          teacher.name,
+
+        subject:
+          teacher.subject,
+
+        plan:
+          selectedPlan.name,
+
+        planType:
+          plan,
+
+        amount:
+          selectedPlan.price,
+
+        classes:
+          selectedPlan.classes,
+
+        joinedDate:
+          new Date().toLocaleDateString(
+            "en-IN"
+          ),
+
+        status:
+          "Active",
+      };
+
+
+      const updatedRelationships = [
+        ...existingRelationships,
+        newRelationship,
+      ];
+
+
+      localStorage.setItem(
+        "teacherStudents",
+        JSON.stringify(
+          updatedRelationships
+        )
+      );
+
+    }
+
+
+    // =========================================
+    // SUCCESS
+    // =========================================
+
+    alert(
+      "Payment successful! You are now connected to your teacher."
+    );
+
 
     navigate("/student/dashboard");
   };
 
 
-  // ==============================
+  // =========================================
   // CHECK SELECTION
-  // ==============================
+  // =========================================
 
   if (!teacher || !selectedPlan) {
+
     return (
       <div className="payment-page">
 
@@ -181,13 +297,12 @@ function Payment() {
   }
 
 
-  // ==============================
+  // =========================================
   // PAYMENT PAGE
-  // ==============================
+  // =========================================
 
   return (
     <div className="payment-page">
-
 
       {/* Header */}
 
@@ -285,7 +400,10 @@ function Payment() {
           </span>
 
           <strong>
-            ₹{selectedPlan.price.toLocaleString("en-IN")}
+            ₹
+            {selectedPlan.price.toLocaleString(
+              "en-IN"
+            )}
           </strong>
 
         </div>

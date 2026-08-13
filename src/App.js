@@ -51,6 +51,12 @@ import MonthlyPlan from "./pages/student/MonthlyPlan";
 import Payment from "./pages/student/Payment";
 import StudentPayments from "./pages/student/StudentPayments";
 
+/* =========================================
+   TEACHER
+========================================= */
+import TeacherDashboard from "./pages/teacher/TeacherDashboard";
+import MyStudents from "./pages/teacher/MyStudents";
+import TeacherMyClasses from "./pages/teacher/MyClasses";
 
 function App() {
   return (
@@ -339,7 +345,18 @@ function App() {
             />
           }
         />
-
+              <Route
+        path="/teacher/dashboard"
+        element={<TeacherDashboard />}
+      />
+      <Route
+  path="/teacher/students"
+  element={<MyStudents />}
+/>
+<Route
+  path="/teacher/classes"
+  element={<TeacherMyClasses />}
+/>
       </Routes>
 
     </BrowserRouter>
