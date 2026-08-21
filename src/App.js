@@ -38,6 +38,7 @@ import AdminSettings from "./pages/admin/AdminSettings";
 import AdminTeacherProfile from "./pages/admin/AdminTeacherProfile";
 import AdminLogin from "./pages/admin/AdminLogin";
 
+
 /* =========================================
    STUDENT
 ========================================= */
@@ -51,12 +52,17 @@ import MonthlyPlan from "./pages/student/MonthlyPlan";
 import Payment from "./pages/student/Payment";
 import StudentPayments from "./pages/student/StudentPayments";
 
+
 /* =========================================
    TEACHER
 ========================================= */
+
 import TeacherDashboard from "./pages/teacher/TeacherDashboard";
 import MyStudents from "./pages/teacher/MyStudents";
 import TeacherMyClasses from "./pages/teacher/MyClasses";
+import TeacherSchedule from "./pages/teacher/TeacherSchedule";
+import TeacherPayments from "./pages/teacher/TeacherPayments";
+
 
 function App() {
   return (
@@ -157,14 +163,16 @@ function App() {
           path="/admin/settings"
           element={<AdminSettings />}
         />
+
         <Route
-  path="/admin/teacher/:id"
-  element={<AdminTeacherProfile />}
-/>
-<Route
-  path="/admin/login"
-  element={<AdminLogin />}
-/>
+          path="/admin/teacher/:id"
+          element={<AdminTeacherProfile />}
+        />
+
+        <Route
+          path="/admin/login"
+          element={<AdminLogin />}
+        />
 
 
         {/* =====================================
@@ -192,9 +200,9 @@ function App() {
         ===================================== */}
 
         <Route
-  path="/student/teacher-profile/:id"
-  element={<TeacherProfile />}
-/>
+          path="/student/teacher-profile/:id"
+          element={<TeacherProfile />}
+        />
 
 
         {/* =====================================
@@ -333,6 +341,56 @@ function App() {
 
 
         {/* =====================================
+            TEACHER DASHBOARD
+        ===================================== */}
+
+        <Route
+          path="/teacher/dashboard"
+          element={<TeacherDashboard />}
+        />
+
+
+        {/* =====================================
+            TEACHER STUDENTS
+        ===================================== */}
+
+        <Route
+          path="/teacher/students"
+          element={<MyStudents />}
+        />
+
+
+        {/* =====================================
+            TEACHER CLASSES
+        ===================================== */}
+
+        <Route
+          path="/teacher/classes"
+          element={<TeacherMyClasses />}
+        />
+
+
+        {/* =====================================
+            TEACHER SCHEDULE
+        ===================================== */}
+
+        <Route
+          path="/teacher/schedule"
+          element={<TeacherSchedule />}
+        />
+
+
+        {/* =====================================
+            TEACHER PAYMENTS
+        ===================================== */}
+
+        <Route
+          path="/teacher/payments"
+          element={<TeacherPayments />}
+        />
+
+
+        {/* =====================================
             FALLBACK
         ===================================== */}
 
@@ -345,18 +403,7 @@ function App() {
             />
           }
         />
-              <Route
-        path="/teacher/dashboard"
-        element={<TeacherDashboard />}
-      />
-      <Route
-  path="/teacher/students"
-  element={<MyStudents />}
-/>
-<Route
-  path="/teacher/classes"
-  element={<TeacherMyClasses />}
-/>
+
       </Routes>
 
     </BrowserRouter>

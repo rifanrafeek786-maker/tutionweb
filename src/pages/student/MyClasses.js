@@ -1,189 +1,142 @@
 import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import teachers from "../../data/teachers";
 
 function MyClasses() {
-  const [student, setStudent] = useState(null);
-  const [payment, setPayment] = useState(null);
-  const [teacher, setTeacher] = useState(null);
   const [classes, setClasses] = useState([]);
 
   useEffect(() => {
-    loadClassData();
+    loadClasses();
   }, []);
 
-  const loadClassData = () => {
-    /* ================================
-       GET LOGGED-IN STUDENT
-    ================================= */
+  const loadClasses = () => {
+    // =========================================
+    // GET LOGGED-IN STUDENT
+    // =========================================
 
     const loggedInStudent =
-      JSON.parse(localStorage.getItem("loggedInStudent"));
+      JSON.parse(
+        localStorage.getItem("loggedInStudent")
+      );
 
-    setStudent(loggedInStudent);
+    // =========================================
+    // GET CLASSES
+    // =========================================
+
+    const savedClasses =
+      JSON.parse(
+        localStorage.getItem("classes")
+      ) || [];
+
+    // =========================================
+    // GET TEACHER SCHEDULES
+    // =========================================
+
+    const savedSchedules =
+      JSON.parse(
+        localStorage.getItem(
+          "teacherSchedules"
+        )
+      ) || [];
+
 
     if (!loggedInStudent) {
+      setClasses([]);
       return;
     }
 
 
-    /* ================================
-       GET PAYMENTS
-    ================================= */
+    // =========================================
+    // FIND STUDENT CLASSES
+    // =========================================
 
-    const savedPayments =
-      JSON.parse(localStorage.getItem("payments")) || [];
-
-    const studentPayment = savedPayments
-      .filter(
+    const studentClasses =
+      savedClasses.filter(
         (item) =>
           String(item.studentId) ===
-            String(loggedInStudent.id) &&
-          item.status === "Paid"
-      )
-      .slice(-1)[0];
-
-    setPayment(studentPayment || null);
-
-
-    /* ================================
-       GET TEACHERS
-    ================================= */
-
-    const savedTeachers =
-      JSON.parse(localStorage.getItem("teachers")) || [];
-
-    const allTeachers = [
-      ...teachers,
-      ...savedTeachers,
-    ];
+            String(loggedInStudent.id) ||
+          item.student ===
+            loggedInStudent.name ||
+          item.studentName ===
+            loggedInStudent.name
+      );
 
 
-    if (studentPayment) {
-      let selectedTeacher = null;
+    // =========================================
+    // CONNECT SCHEDULE TO CLASS
+    // =========================================
 
-      if (studentPayment.teacherId) {
-        selectedTeacher = allTeachers.find(
-          (item) =>
-            String(item.id) ===
-            String(studentPayment.teacherId)
-        );
-      }
+    const classesWithSchedule =
+      studentClasses.map((item) => {
 
-      if (!selectedTeacher && studentPayment.teacher) {
-        selectedTeacher = allTeachers.find(
-          (item) =>
-            item.name === studentPayment.teacher
-        );
-      }
-
-      setTeacher(selectedTeacher || null);
-    }
-
-
-    /* ================================
-       GET REAL CLASSES
-    ================================= */
-
-    const savedClasses =
-      JSON.parse(localStorage.getItem("classes")) || [];
-
-
-    /* ================================
-       FILTER CLASSES FOR THIS STUDENT
-    ================================= */
-
-    const studentClasses = savedClasses.filter(
-      (item) => {
-
-        // Match student ID
-        if (
-          item.studentId &&
-          loggedInStudent.id
-        ) {
-          return (
-            String(item.studentId) ===
-            String(loggedInStudent.id)
+        const classSchedules =
+          savedSchedules.filter(
+            (schedule) =>
+              String(schedule.classId) ===
+              String(item.id)
           );
-        }
 
-        // Match student name
-        if (
-          item.student &&
-          loggedInStudent.name
-        ) {
-          return (
-            item.student.toLowerCase() ===
-            loggedInStudent.name.toLowerCase()
-          );
-        }
 
-        return false;
-      }
+        // Get first schedule
+        const schedule =
+          classSchedules.length > 0
+            ? classSchedules[0]
+            : null;
+
+
+        return {
+          ...item,
+
+          scheduleDate:
+            schedule?.date || "",
+
+          scheduleTime:
+            schedule?.time || "",
+
+          scheduleStatus:
+            schedule?.status ||
+            "",
+        };
+      });
+
+
+    setClasses(
+      classesWithSchedule
+    );
+  };
+
+
+  // =========================================
+  // REFRESH WHEN PAGE GETS FOCUS
+  // =========================================
+
+  useEffect(() => {
+
+    const handleFocus = () => {
+      loadClasses();
+    };
+
+    window.addEventListener(
+      "focus",
+      handleFocus
     );
 
-    setClasses(studentClasses);
-  };
+    return () => {
+      window.removeEventListener(
+        "focus",
+        handleFocus
+      );
+    };
 
-
-  /* =================================
-     PLAN CLASS COUNT
-  ================================= */
-
-  const planClasses = {
-    "Basic Plan": 8,
-    "Standard Plan": 12,
-    "Premium Plan": 16,
-
-    basic: 8,
-    standard: 12,
-    premium: 16,
-  };
-
-
-  const totalClasses =
-    planClasses[payment?.plan] || 0;
-
-
-  /* =================================
-     COMPLETED CLASSES
-  ================================= */
-
-  const completedClasses = classes.filter(
-    (item) =>
-      String(item.status).toLowerCase() ===
-      "completed"
-  );
-
-
-  /* =================================
-     UPCOMING CLASSES
-  ================================= */
-
-  const upcomingClasses = classes.filter(
-    (item) =>
-      String(item.status).toLowerCase() !==
-      "completed"
-  );
-
-
-  /* =================================
-     REMAINING CLASSES
-  ================================= */
-
-  const remainingClasses = Math.max(
-    totalClasses - completedClasses.length,
-    0
-  );
+  }, []);
 
 
   return (
     <div className="student-dashboard">
 
 
-      {/* =================================
+      {/* =====================================
           SIDEBAR
-      ================================= */}
+      ===================================== */}
 
       <aside className="student-sidebar">
 
@@ -202,12 +155,12 @@ function MyClasses() {
             Find Teachers
           </Link>
 
-          <Link to="/student/teacher">
+          <Link to="/student/my-teacher">
             My Teacher
           </Link>
 
           <Link
-            to="/student/classes"
+            to="/student/my-classes"
             className="active"
           >
             My Classes
@@ -221,7 +174,7 @@ function MyClasses() {
             Monthly Plan
           </Link>
 
-          <Link to="/student/payments">
+          <Link to="/student/payment">
             Payments
           </Link>
 
@@ -251,14 +204,14 @@ function MyClasses() {
       </aside>
 
 
-      {/* =================================
-          MAIN CONTENT
-      ================================= */}
+      {/* =====================================
+          MAIN
+      ===================================== */}
 
       <main className="student-main">
 
 
-        {/* TOP BAR */}
+        {/* HEADER */}
 
         <div className="student-topbar">
 
@@ -269,32 +222,35 @@ function MyClasses() {
             </h1>
 
             <p>
-              Manage your classes and learning sessions.
+              View your classes and schedules.
             </p>
 
           </div>
 
-
-          <div className="student-profile">
-
-            <div className="student-avatar">
-
-              {student?.name
-                ?.charAt(0)
-                .toUpperCase() || "S"}
-
-            </div>
+        </div>
 
 
-            <div className="student-profile-info">
+        {/* =====================================
+            CLASS COUNT
+        ===================================== */}
 
-              <strong>
-                {student?.name || "Student"}
-              </strong>
+        <div className="student-statistics">
 
-              <span>
-                Student
-              </span>
+          <div className="student-stat-card">
+
+            <span>
+              📚
+            </span>
+
+            <div>
+
+              <p>
+                My Classes
+              </p>
+
+              <h2>
+                {classes.length}
+              </h2>
 
             </div>
 
@@ -303,30 +259,39 @@ function MyClasses() {
         </div>
 
 
-        {/* =================================
-            NO ACTIVE PLAN
-        ================================= */}
+        {/* =====================================
+            EMPTY STATE
+        ===================================== */}
 
-        {!payment ? (
+        {classes.length === 0 ? (
 
-          <div className="my-classes-empty">
+          <div className="student-welcome-card">
 
-            <div className="my-classes-empty-icon">
+            <div
+              style={{
+                fontSize: "45px",
+              }}
+            >
               📚
             </div>
 
             <h2>
-              No Active Plan
+              No Classes Yet
             </h2>
 
             <p>
-              Purchase a monthly plan to start
-              attending classes.
+              Your teacher's classes will
+              appear here.
             </p>
 
             <Link
               to="/student/teachers"
-              className="find-teacher-button"
+              className="auth-button"
+              style={{
+                display: "inline-block",
+                marginTop: "15px",
+                textDecoration: "none",
+              }}
             >
               Find a Teacher
             </Link>
@@ -335,371 +300,112 @@ function MyClasses() {
 
         ) : (
 
-          <>
+          /* ===================================
+             CLASS LIST
+          =================================== */
 
+          <div className="student-class-list">
 
-            {/* =================================
-                SUMMARY
-            ================================= */}
+            {classes.map(
+              (item) => (
 
-            <div className="class-summary-grid">
+                <div
+                  className="student-class-card"
+                  key={item.id}
+                >
 
+                  {/* ICON */}
 
-              {/* TOTAL */}
-
-              <div className="class-summary-card">
-
-                <div className="class-summary-icon">
-                  📚
-                </div>
-
-                <div>
-
-                  <span>
-                    Total Classes
-                  </span>
-
-                  <strong>
-                    {totalClasses}
-                  </strong>
-
-                </div>
-
-              </div>
-
-
-              {/* COMPLETED */}
-
-              <div className="class-summary-card">
-
-                <div className="class-summary-icon">
-                  ✓
-                </div>
-
-                <div>
-
-                  <span>
-                    Completed
-                  </span>
-
-                  <strong>
-                    {completedClasses.length}
-                  </strong>
-
-                </div>
-
-              </div>
-
-
-              {/* UPCOMING */}
-
-              <div className="class-summary-card">
-
-                <div className="class-summary-icon">
-                  🗓️
-                </div>
-
-                <div>
-
-                  <span>
-                    Upcoming
-                  </span>
-
-                  <strong>
-                    {upcomingClasses.length}
-                  </strong>
-
-                </div>
-
-              </div>
-
-
-              {/* REMAINING */}
-
-              <div className="class-summary-card">
-
-                <div className="class-summary-icon">
-                  ⏳
-                </div>
-
-                <div>
-
-                  <span>
-                    Remaining
-                  </span>
-
-                  <strong>
-                    {remainingClasses}
-                  </strong>
-
-                </div>
-
-              </div>
-
-            </div>
-
-
-            {/* =================================
-                CURRENT TEACHER
-            ================================= */}
-
-            <div className="student-dashboard-section">
-
-              <div className="student-section-header">
-
-                <div>
-
-                  <h2>
-                    Current Teacher
-                  </h2>
-
-                  <p>
-                    Your teacher for this monthly plan.
-                  </p>
-
-                </div>
-
-              </div>
-
-
-              <div className="class-teacher-card">
-
-                <div className="class-teacher-avatar">
-                  👨‍🏫
-                </div>
-
-
-                <div className="class-teacher-info">
-
-                  <strong>
-                    {teacher?.name ||
-                      payment.teacher ||
-                      "Teacher"}
-                  </strong>
-
-                  <span>
-                    {teacher?.subject ||
-                      payment.subject ||
-                      "Subject"}
-                  </span>
-
-                </div>
-
-
-                <div className="class-plan-badge">
-
-                  {payment.plan ||
-                    "Monthly Plan"}
-
-                </div>
-
-              </div>
-
-            </div>
-
-
-            {/* =================================
-                REAL CLASSES
-            ================================= */}
-
-            <div className="student-dashboard-section">
-
-              <div className="student-section-header">
-
-                <div>
-
-                  <h2>
-                    My Classes
-                  </h2>
-
-                  <p>
-                    Classes scheduled by the admin.
-                  </p>
-
-                </div>
-
-              </div>
-
-
-              {classes.length === 0 ? (
-
-                <div className="no-classes">
-
-                  <div className="no-classes-icon">
+                  <div className="student-class-icon">
                     📚
                   </div>
 
-                  <h2>
-                    No Classes Scheduled
-                  </h2>
 
-                  <p>
-                    Your teacher classes will
-                    appear here when they are
-                    scheduled.
-                  </p>
+                  {/* INFORMATION */}
 
-                </div>
+                  <div className="student-class-info">
 
-              ) : (
-
-                <div className="class-list">
-
-                  {classes.map((item) => (
-
-                    <div
-                      className="class-item"
-                      key={item.id}
-                    >
+                    <h2>
+                      {item.name ||
+                        item.className ||
+                        "Class"}
+                    </h2>
 
 
-                      <div className="class-item-icon">
-                        📚
-                      </div>
+                    <p>
+                      👨‍🏫 Teacher:{" "}
+                      {item.teacher ||
+                        "Unknown Teacher"}
+                    </p>
 
 
-                      <div className="class-item-info">
-
-                        <strong>
-                          {item.subject ||
-                            "Class"}
-                        </strong>
-
-                        <span>
-                          Teacher:{" "}
-                          {item.teacher ||
-                            teacher?.name ||
-                            "Teacher"}
-                        </span>
-
-                      </div>
+                    <p>
+                      📖 Subject:{" "}
+                      {item.subject ||
+                        "Not specified"}
+                    </p>
 
 
-                      <div className="class-item-date">
+                    {/* SCHEDULE */}
 
-                        <strong>
-                          {item.date ||
-                            item.schedule ||
-                            "Date not set"}
-                        </strong>
-
-                        <span>
-                          {item.time ||
-                            ""}
-                        </span>
-
-                      </div>
-
+                    {item.scheduleDate ? (
 
                       <div
-                        className={
-                          String(item.status)
-                            .toLowerCase() ===
-                          "completed"
-                            ? "class-status completed"
-                            : "class-status"
-                        }
+                        style={{
+                          marginTop: "10px",
+                        }}
                       >
-                        {item.status ||
-                          "Upcoming"}
+
+                        <p>
+                          📅 Date:{" "}
+                          {item.scheduleDate}
+                        </p>
+
+                        <p>
+                          🕐 Time:{" "}
+                          {item.scheduleTime}
+                        </p>
+
+                        <p>
+                          Status:{" "}
+                          {item.scheduleStatus ||
+                            "Scheduled"}
+                        </p>
+
                       </div>
 
-                    </div>
+                    ) : (
 
-                  ))}
+                      <p
+                        style={{
+                          marginTop: "10px",
+                        }}
+                      >
+                        📅 Not scheduled yet
+                      </p>
 
-                </div>
+                    )}
 
-              )}
-
-            </div>
+                  </div>
 
 
-            {/* =================================
-                CURRENT PLAN
-            ================================= */}
+                  {/* CLASS STATUS */}
 
-            <div className="student-dashboard-section">
+                  <div className="student-class-status">
 
-              <div className="student-section-header">
+                    <span>
+                      {item.status ||
+                        "Active"}
+                    </span>
 
-                <div>
-
-                  <h2>
-                    Current Plan
-                  </h2>
-
-                  <p>
-                    Your active monthly subscription.
-                  </p>
+                  </div>
 
                 </div>
 
-              </div>
+              )
+            )}
 
-
-              <div className="class-plan-details">
-
-
-                <div>
-
-                  <span>
-                    Plan
-                  </span>
-
-                  <strong>
-                    {payment.plan}
-                  </strong>
-
-                </div>
-
-
-                <div>
-
-                  <span>
-                    Classes
-                  </span>
-
-                  <strong>
-                    {totalClasses} classes / month
-                  </strong>
-
-                </div>
-
-
-                <div>
-
-                  <span>
-                    Amount
-                  </span>
-
-                  <strong>
-                    ₹
-                    {Number(
-                      payment.amount || 0
-                    ).toLocaleString("en-IN")}
-                  </strong>
-
-                </div>
-
-
-                <div>
-
-                  <span>
-                    Status
-                  </span>
-
-                  <strong className="class-paid">
-                    {payment.status}
-                  </strong>
-
-                </div>
-
-              </div>
-
-            </div>
-
-          </>
+          </div>
 
         )}
 
