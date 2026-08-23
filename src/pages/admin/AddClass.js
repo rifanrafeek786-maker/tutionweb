@@ -11,15 +11,18 @@ function AddClass() {
   const [teacher, setTeacher] = useState("");
   const [student, setStudent] = useState("");
   const [subject, setSubject] = useState("");
-  const [schedule, setSchedule] = useState("");
   const [status, setStatus] = useState("Active");
+
+  // =========================================
+  // LOAD TEACHERS AND STUDENTS
+  // =========================================
 
   useEffect(() => {
     // Load admin-added teachers
     const savedTeachers =
       JSON.parse(localStorage.getItem("teachers")) || [];
 
-    // Dummy teachers + admin-added teachers
+    // Combine dummy teachers + admin-added teachers
     const combinedTeachers = [
       ...teachers,
       ...savedTeachers,
@@ -34,79 +37,136 @@ function AddClass() {
     setStudents(savedStudents);
   }, []);
 
+  // =========================================
+  // CREATE CLASS
+  // =========================================
+
   const handleSubmit = (e) => {
     e.preventDefault();
 
-    if (!teacher || !student || !subject || !schedule) {
+    // Check required fields
+    if (!teacher || !student || !subject) {
       alert("Please fill all fields.");
       return;
     }
 
     // Find selected teacher
     const selectedTeacher = allTeachers.find(
-      (item) => String(item.id) === String(teacher)
+      (item) =>
+        String(item.id) === String(teacher)
     );
 
     // Find selected student
     const selectedStudent = students.find(
-      (item) => String(item.id) === String(student)
+      (item) =>
+        String(item.id) === String(student)
     );
+
+    // =========================================
+    // CREATE NEW CLASS
+    // =========================================
 
     const newClass = {
       id: Date.now(),
 
+      // Teacher
       teacher:
-        selectedTeacher?.name || "Teacher",
+        selectedTeacher?.name ||
+        "Teacher",
 
-      teacherId: teacher,
+      teacherId:
+        teacher,
 
+      // Student
       student:
-        selectedStudent?.name || "Student",
+        selectedStudent?.name ||
+        "Student",
 
-      studentId: student,
+      studentId:
+        student,
 
-      subject: subject,
+      // Subject
+      subject:
+        subject,
 
-      schedule: schedule,
+      // Status
+      status:
+        status,
 
-      status: status,
+      // Schedule is intentionally empty.
+      // Teacher will set it later.
+      scheduleDate: "",
+      startTime: "",
+      endTime: "",
+      schedule: "",
+      scheduleSetBy: "",
     };
 
-    // Get existing classes
-    const existingClasses =
-      JSON.parse(localStorage.getItem("classes")) || [];
+    // =========================================
+    // GET EXISTING CLASSES
+    // =========================================
 
-    // Add new class
+    const existingClasses =
+      JSON.parse(
+        localStorage.getItem("classes")
+      ) || [];
+
+    // =========================================
+    // ADD NEW CLASS
+    // =========================================
+
     const updatedClasses = [
       ...existingClasses,
       newClass,
     ];
 
-    // Save
+    // =========================================
+    // SAVE TO LOCAL STORAGE
+    // =========================================
+
     localStorage.setItem(
       "classes",
-      JSON.stringify(updatedClasses)
+      JSON.stringify(
+        updatedClasses
+      )
     );
 
-    alert("Class created successfully!");
+    // =========================================
+    // SUCCESS
+    // =========================================
+
+    alert(
+      "Class created successfully!"
+    );
 
     // Go to Manage Classes
     navigate("/admin/classes");
   };
 
+  // =========================================
+  // UI
+  // =========================================
+
   return (
     <div className="add-class-page">
 
-      {/* Header */}
+      {/* =====================================
+          HEADER
+      ===================================== */}
 
       <div className="add-class-header">
 
         <div>
-          <h1>Add New Class</h1>
+
+          <h1>
+            Add New Class
+          </h1>
 
           <p>
-            Assign a teacher and student to a class.
+            Assign a teacher, student and subject
+            to a class.
           </p>
+
         </div>
 
         <Link
@@ -119,13 +179,17 @@ function AddClass() {
       </div>
 
 
-      {/* Form */}
+      {/* =====================================
+          FORM CARD
+      ===================================== */}
 
       <div className="add-class-card">
 
         <form onSubmit={handleSubmit}>
 
-          {/* Teacher */}
+          {/* =================================
+              TEACHER
+          ================================= */}
 
           <div className="add-class-form-group">
 
@@ -145,23 +209,27 @@ function AddClass() {
                 Choose a teacher
               </option>
 
-              {allTeachers.map((item) => (
+              {allTeachers.map(
+                (item) => (
 
-                <option
-                  key={item.id}
-                  value={item.id}
-                >
-                  {item.name}
-                </option>
+                  <option
+                    key={item.id}
+                    value={item.id}
+                  >
+                    {item.name}
+                  </option>
 
-              ))}
+                )
+              )}
 
             </select>
 
           </div>
 
 
-          {/* Student */}
+          {/* =================================
+              STUDENT
+          ================================= */}
 
           <div className="add-class-form-group">
 
@@ -181,23 +249,27 @@ function AddClass() {
                 Choose a student
               </option>
 
-              {students.map((item) => (
+              {students.map(
+                (item) => (
 
-                <option
-                  key={item.id}
-                  value={item.id}
-                >
-                  {item.name} - {item.email}
-                </option>
+                  <option
+                    key={item.id}
+                    value={item.id}
+                  >
+                    {item.name} - {item.email}
+                  </option>
 
-              ))}
+                )
+              )}
 
             </select>
 
           </div>
 
 
-          {/* Subject */}
+          {/* =================================
+              SUBJECT
+          ================================= */}
 
           <div className="add-class-form-group">
 
@@ -246,28 +318,9 @@ function AddClass() {
           </div>
 
 
-          {/* Schedule */}
-
-          <div className="add-class-form-group">
-
-            <label>
-              Schedule
-            </label>
-
-            <input
-              type="text"
-              placeholder="Example: Monday - 5:00 PM"
-              value={schedule}
-              onChange={(e) =>
-                setSchedule(e.target.value)
-              }
-              required
-            />
-
-          </div>
-
-
-          {/* Status */}
+          {/* =================================
+              STATUS
+          ================================= */}
 
           <div className="add-class-form-group">
 
@@ -299,7 +352,42 @@ function AddClass() {
           </div>
 
 
-          {/* Buttons */}
+          {/* =================================
+              INFORMATION
+          ================================= */}
+
+          <div
+            style={{
+              padding: "15px",
+              marginTop: "10px",
+              marginBottom: "20px",
+              borderRadius: "10px",
+              background: "#f1f5f9",
+              color: "#475569",
+            }}
+          >
+
+            <strong>
+              📅 Schedule
+            </strong>
+
+            <p
+              style={{
+                margin:
+                  "6px 0 0 0",
+              }}
+            >
+              The teacher will set the class
+              date and time after the class
+              has been created.
+            </p>
+
+          </div>
+
+
+          {/* =================================
+              BUTTONS
+          ================================= */}
 
           <div className="add-class-buttons">
 

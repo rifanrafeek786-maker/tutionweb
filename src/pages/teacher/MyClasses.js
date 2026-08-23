@@ -3,315 +3,129 @@ import { Link } from "react-router-dom";
 
 function MyClasses() {
   const [classes, setClasses] = useState([]);
-  const [students, setStudents] = useState([]);
+  const [selectedClass, setSelectedClass] = useState(null);
 
-  const [showForm, setShowForm] = useState(false);
-
-  const [form, setForm] = useState({
-    studentId: "",
-    student: "",
-    name: "",
-    subject: "",
-  });
-
-
-  // =========================================
-  // LOAD DATA
-  // =========================================
+  const [date, setDate] = useState("");
+  const [startTime, setStartTime] = useState("");
+  const [endTime, setEndTime] = useState("");
 
   useEffect(() => {
-    loadData();
+    loadClasses();
   }, []);
 
+  function loadClasses() {
+    const teacher = JSON.parse(
+      localStorage.getItem("loggedInTeacher")
+    );
 
-  const loadData = () => {
-    const loggedInTeacher =
-      JSON.parse(
-        localStorage.getItem("loggedInTeacher")
-      );
+    const allClasses =
+      JSON.parse(localStorage.getItem("classes")) || [];
 
-    const savedClasses =
-      JSON.parse(
-        localStorage.getItem("classes")
-      ) || [];
-
-    const teacherStudents =
-      JSON.parse(
-        localStorage.getItem("teacherStudents")
-      ) || [];
-
-
-    if (!loggedInTeacher) {
+    if (!teacher) {
       setClasses([]);
-      setStudents([]);
       return;
     }
 
-
-    // -----------------------------------------
-    // GET THIS TEACHER'S CLASSES
-    // -----------------------------------------
-
-    const teacherClasses =
-      savedClasses.filter(
-        (item) =>
-          String(item.teacherId) ===
-            String(loggedInTeacher.id) ||
-          item.teacher ===
-            loggedInTeacher.name
+    const myClasses = allClasses.filter(function (item) {
+      return (
+        String(item.teacherId) ===
+          String(teacher.id) ||
+        item.teacher === teacher.name
       );
-
-
-    // -----------------------------------------
-    // GET THIS TEACHER'S STUDENTS
-    // -----------------------------------------
-
-    const myStudents =
-      teacherStudents.filter(
-        (item) =>
-          String(item.teacherId) ===
-          String(loggedInTeacher.id)
-      );
-
-
-    setClasses(teacherClasses);
-    setStudents(myStudents);
-  };
-
-
-  // =========================================
-  // FORM CHANGE
-  // =========================================
-
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-
-    setForm({
-      ...form,
-      [name]: value,
     });
 
+    setClasses(myClasses);
+  }
 
-    // Get selected student
-    if (name === "studentId") {
+  function openSchedule(classItem) {
+    setSelectedClass(classItem);
 
-      const selectedStudent =
-        students.find(
-          (student) =>
-            String(student.studentId) ===
-            String(value)
-        );
+    setDate(classItem.scheduleDate || "");
+    setStartTime(classItem.startTime || "");
+    setEndTime(classItem.endTime || "");
+  }
 
-
-      setForm((previous) => ({
-        ...previous,
-        studentId: value,
-        student:
-          selectedStudent?.student ||
-          "",
-      }));
-    }
-  };
-
-
-  // =========================================
-  // CREATE CLASS
-  // =========================================
-
-  const handleSubmit = (e) => {
-    e.preventDefault();
-
-
-    const loggedInTeacher =
-      JSON.parse(
-        localStorage.getItem("loggedInTeacher")
-      );
-
-
-    if (!loggedInTeacher) {
-      alert("Teacher login not found.");
+  function saveSchedule() {
+    if (!selectedClass) {
       return;
     }
 
-
-    if (!form.studentId) {
-      alert("Please select a student.");
+    if (!date || !startTime || !endTime) {
+      alert("Please select date and time.");
       return;
     }
 
-
-    if (!form.name.trim()) {
-      alert("Please enter a class name.");
+    if (startTime >= endTime) {
+      alert("End time must be later than start time.");
       return;
     }
 
+    const allClasses =
+      JSON.parse(localStorage.getItem("classes")) || [];
 
-    if (!form.subject.trim()) {
-      alert("Please enter a subject.");
-      return;
-    }
+    const updatedClasses = allClasses.map(function (item) {
+      if (
+        String(item.id) ===
+        String(selectedClass.id)
+      ) {
+        return {
+          ...item,
+          scheduleDate: date,
+          startTime: startTime,
+          endTime: endTime,
+          schedule:
+            date +
+            " - " +
+            startTime +
+            " to " +
+            endTime,
+          scheduleSetBy: "Teacher"
+        };
+      }
 
-
-    // -----------------------------------------
-    // CREATE CLASS
-    // -----------------------------------------
-
-    const newClass = {
-
-      id: Date.now(),
-
-      teacherId:
-        loggedInTeacher.id,
-
-      teacher:
-        loggedInTeacher.name,
-
-      studentId:
-        form.studentId,
-
-      student:
-        form.student,
-
-      name:
-        form.name,
-
-      subject:
-        form.subject,
-
-      status:
-        "Active",
-
-      schedule:
-        "",
-
-      createdAt:
-        new Date().toLocaleDateString(
-          "en-IN"
-        ),
-    };
-
-
-    // -----------------------------------------
-    // GET EXISTING CLASSES
-    // -----------------------------------------
-
-    const existingClasses =
-      JSON.parse(
-        localStorage.getItem("classes")
-      ) || [];
-
-
-    // -----------------------------------------
-    // SAVE
-    // -----------------------------------------
-
-    const updatedClasses = [
-      ...existingClasses,
-      newClass,
-    ];
-
+      return item;
+    });
 
     localStorage.setItem(
       "classes",
-      JSON.stringify(
-        updatedClasses
-      )
+      JSON.stringify(updatedClasses)
     );
 
+    setSelectedClass(null);
+    setDate("");
+    setStartTime("");
+    setEndTime("");
 
-    // Update screen
+    loadClasses();
 
-    setClasses(
-      updatedClasses.filter(
-        (item) =>
-          String(item.teacherId) ===
-          String(loggedInTeacher.id) ||
-          item.teacher ===
-          loggedInTeacher.name
-      )
-    );
+    alert("Schedule saved successfully!");
+  }
 
+  function cancelSchedule() {
+    setSelectedClass(null);
+    setDate("");
+    setStartTime("");
+    setEndTime("");
+  }
 
-    // Clear form
-
-    setForm({
-      studentId: "",
-      student: "",
-      name: "",
-      subject: "",
-    });
-
-
-    setShowForm(false);
-
-
-    alert(
-      "Class created successfully!"
-    );
-  };
-
-
-  // =========================================
-  // DELETE CLASS
-  // =========================================
-
-  const handleDelete = (id) => {
-
-    const confirmDelete =
-      window.confirm(
-        "Are you sure you want to delete this class?"
+  const scheduledCount = classes.filter(
+    function (item) {
+      return (
+        item.scheduleDate &&
+        item.startTime &&
+        item.endTime
       );
-
-
-    if (!confirmDelete) {
-      return;
     }
-
-
-    const existingClasses =
-      JSON.parse(
-        localStorage.getItem("classes")
-      ) || [];
-
-
-    const updatedClasses =
-      existingClasses.filter(
-        (item) =>
-          item.id !== id
-      );
-
-
-    localStorage.setItem(
-      "classes",
-      JSON.stringify(
-        updatedClasses
-      )
-    );
-
-
-    setClasses(
-      classes.filter(
-        (item) =>
-          item.id !== id
-      )
-    );
-  };
-
+  ).length;
 
   return (
     <div className="teacher-dashboard">
-
-
-      {/* =====================================
-          SIDEBAR
-      ===================================== */}
 
       <aside className="teacher-sidebar">
 
         <div className="teacher-logo">
           TuitionWeb
         </div>
-
 
         <nav className="teacher-nav">
 
@@ -352,174 +166,29 @@ function MyClasses() {
 
         </nav>
 
-
         <div className="teacher-logout">
-
           <Link to="/login">
             Logout
           </Link>
-
         </div>
 
       </aside>
 
-
-      {/* =====================================
-          MAIN
-      ===================================== */}
-
       <main className="teacher-main">
-
-
-        {/* TOP BAR */}
 
         <div className="teacher-topbar">
 
           <div>
-
             <h1>
               My Classes
             </h1>
 
             <p>
-              Create and manage your classes.
+              Classes assigned to you by the admin.
             </p>
-
           </div>
-
-
-          <button
-            className="auth-button"
-            onClick={() =>
-              setShowForm(!showForm)
-            }
-          >
-            {showForm
-              ? "Close"
-              : "+ Add Class"}
-          </button>
 
         </div>
-
-
-        {/* =====================================
-            ADD CLASS FORM
-        ===================================== */}
-
-        {showForm && (
-
-          <div className="teacher-welcome-card">
-
-            <h2>
-              Create New Class
-            </h2>
-
-            <form
-              onSubmit={handleSubmit}
-              style={{
-                marginTop: "20px",
-              }}
-            >
-
-
-              {/* STUDENT */}
-
-              <div className="form-group">
-
-                <label>
-                  Student
-                </label>
-
-                <select
-                  name="studentId"
-                  value={form.studentId}
-                  onChange={handleChange}
-                  required
-                >
-
-                  <option value="">
-                    Select Student
-                  </option>
-
-                  {students.map(
-                    (student) => (
-
-                      <option
-                        key={
-                          student.studentId
-                        }
-                        value={
-                          student.studentId
-                        }
-                      >
-                        {student.student}
-                      </option>
-
-                    )
-                  )}
-
-                </select>
-
-              </div>
-
-
-              {/* CLASS NAME */}
-
-              <div className="form-group">
-
-                <label>
-                  Class Name
-                </label>
-
-                <input
-                  type="text"
-                  name="name"
-                  placeholder="Example: Mathematics Class"
-                  value={form.name}
-                  onChange={handleChange}
-                  required
-                />
-
-              </div>
-
-
-              {/* SUBJECT */}
-
-              <div className="form-group">
-
-                <label>
-                  Subject
-                </label>
-
-                <input
-                  type="text"
-                  name="subject"
-                  placeholder="Example: Mathematics"
-                  value={form.subject}
-                  onChange={handleChange}
-                  required
-                />
-
-              </div>
-
-
-              <button
-                type="submit"
-                className="auth-button"
-              >
-                Create Class
-              </button>
-
-            </form>
-
-          </div>
-
-        )}
-
-
-        {/* =====================================
-            CLASS COUNT
-        ===================================== */}
 
         <div className="teacher-statistics">
 
@@ -530,7 +199,6 @@ function MyClasses() {
             </span>
 
             <div>
-
               <p>
                 Total Classes
               </p>
@@ -538,17 +206,149 @@ function MyClasses() {
               <h2>
                 {classes.length}
               </h2>
+            </div>
 
+          </div>
+
+          <div className="teacher-stat-card">
+
+            <span>
+              📅
+            </span>
+
+            <div>
+              <p>
+                Scheduled
+              </p>
+
+              <h2>
+                {scheduledCount}
+              </h2>
+            </div>
+
+          </div>
+
+          <div className="teacher-stat-card">
+
+            <span>
+              ⏳
+            </span>
+
+            <div>
+              <p>
+                Needs Schedule
+              </p>
+
+              <h2>
+                {classes.length - scheduledCount}
+              </h2>
             </div>
 
           </div>
 
         </div>
 
+        {selectedClass && (
 
-        {/* =====================================
-            CLASS LIST
-        ===================================== */}
+          <div className="teacher-welcome-card">
+
+            <h2>
+              Set Class Schedule
+            </h2>
+
+            <p>
+              Student:{" "}
+              {selectedClass.student || "Student"}
+            </p>
+
+            <p>
+              Subject:{" "}
+              {selectedClass.subject || "Subject"}
+            </p>
+
+            <div style={{ marginTop: "20px" }}>
+
+              <label>
+                Class Date
+              </label>
+
+              <input
+                type="date"
+                value={date}
+                onChange={function (e) {
+                  setDate(e.target.value);
+                }}
+                style={{
+                  display: "block",
+                  width: "100%",
+                  padding: "10px",
+                  marginTop: "8px",
+                  marginBottom: "15px"
+                }}
+              />
+
+              <label>
+                Start Time
+              </label>
+
+              <input
+                type="time"
+                value={startTime}
+                onChange={function (e) {
+                  setStartTime(e.target.value);
+                }}
+                style={{
+                  display: "block",
+                  width: "100%",
+                  padding: "10px",
+                  marginTop: "8px",
+                  marginBottom: "15px"
+                }}
+              />
+
+              <label>
+                End Time
+              </label>
+
+              <input
+                type="time"
+                value={endTime}
+                onChange={function (e) {
+                  setEndTime(e.target.value);
+                }}
+                style={{
+                  display: "block",
+                  width: "100%",
+                  padding: "10px",
+                  marginTop: "8px",
+                  marginBottom: "20px"
+                }}
+              />
+
+              <button
+                type="button"
+                className="create-class-button"
+                onClick={saveSchedule}
+              >
+                Save Schedule
+              </button>
+
+              <button
+                type="button"
+                className="cancel-class-button"
+                onClick={cancelSchedule}
+                style={{
+                  marginLeft: "10px"
+                }}
+              >
+                Cancel
+              </button>
+
+            </div>
+
+          </div>
+
+        )}
 
         {classes.length === 0 ? (
 
@@ -556,19 +356,19 @@ function MyClasses() {
 
             <div
               style={{
-                fontSize: "45px",
+                fontSize: "50px"
               }}
             >
               📚
             </div>
 
             <h2>
-              No Classes Yet
+              No Classes Assigned
             </h2>
 
             <p>
-              Create a class for one of your
-              students.
+              Classes created by the admin
+              will appear here.
             </p>
 
           </div>
@@ -577,8 +377,14 @@ function MyClasses() {
 
           <div className="teacher-class-list">
 
-            {classes.map(
-              (item) => (
+            {classes.map(function (item) {
+
+              const isScheduled =
+                item.scheduleDate &&
+                item.startTime &&
+                item.endTime;
+
+              return (
 
                 <div
                   className="teacher-class-card"
@@ -589,11 +395,12 @@ function MyClasses() {
                     📚
                   </div>
 
-
                   <div className="teacher-class-info">
 
                     <h2>
                       {item.name ||
+                        item.className ||
+                        item.subject ||
                         "Class"}
                     </h2>
 
@@ -606,43 +413,56 @@ function MyClasses() {
                     <p>
                       Student:{" "}
                       {item.student ||
+                        item.studentName ||
                         "Not assigned"}
                     </p>
 
                     <p>
+                      Status:{" "}
+                      {item.status ||
+                        "Active"}
+                    </p>
+
+                    <p>
                       Schedule:{" "}
-                      {item.schedule ||
-                        "Not scheduled"}
+                      {isScheduled
+                        ? item.schedule
+                        : "Not scheduled yet"}
                     </p>
 
                   </div>
 
-
                   <div className="teacher-class-status">
 
-                    <span>
-                      {item.status ||
-                        "Active"}
+                    <span
+                      style={{
+                        display: "block",
+                        marginBottom: "10px"
+                      }}
+                    >
+                      {isScheduled
+                        ? "Scheduled"
+                        : "Needs Schedule"}
                     </span>
 
-
                     <button
-                      className="delete-payment-button"
-                      onClick={() =>
-                        handleDelete(
-                          item.id
-                        )
-                      }
+                      type="button"
+                      className="create-class-button"
+                      onClick={function () {
+                        openSchedule(item);
+                      }}
                     >
-                      Delete
+                      {isScheduled
+                        ? "Edit Schedule"
+                        : "Set Schedule"}
                     </button>
 
                   </div>
 
                 </div>
 
-              )
-            )}
+              );
+            })}
 
           </div>
 
