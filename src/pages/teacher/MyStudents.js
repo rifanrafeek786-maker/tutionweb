@@ -8,9 +8,15 @@ function MyStudents() {
     loadStudents();
   }, []);
 
+  // =========================================
+  // LOAD MY STUDENTS
+  // =========================================
+
   const loadStudents = () => {
     const loggedInTeacher =
-      JSON.parse(localStorage.getItem("loggedInTeacher"));
+      JSON.parse(
+        localStorage.getItem("loggedInTeacher")
+      );
 
     const teacherStudents =
       JSON.parse(
@@ -22,20 +28,44 @@ function MyStudents() {
       return;
     }
 
-    // Get only students connected to this teacher
-    const myStudents = teacherStudents.filter(
-      (student) =>
-        String(student.teacherId) ===
-        String(loggedInTeacher.id)
-    );
+    // Only students connected to this teacher
+    const myStudents =
+      teacherStudents.filter(
+        (student) =>
+          String(student.teacherId) ===
+          String(loggedInTeacher.id)
+      );
 
     setStudents(myStudents);
   };
 
+  // =========================================
+  // STATISTICS
+  // =========================================
+
+  const activeStudents =
+    students.filter(
+      (student) =>
+        student.status === "Active"
+    ).length;
+
+  const uniquePlans =
+    new Set(
+      students.map(
+        (student) => student.plan
+      )
+    ).size;
+
+  // =========================================
+  // PAGE
+  // =========================================
+
   return (
     <div className="teacher-dashboard">
 
-      {/* SIDEBAR */}
+      {/* =====================================
+          SIDEBAR
+      ===================================== */}
 
       <aside className="teacher-sidebar">
 
@@ -64,10 +94,6 @@ function MyStudents() {
             Schedule
           </Link>
 
-          <Link to="/teacher/payments">
-            Payments
-          </Link>
-
           <Link to="/teacher/messages">
             Messages
           </Link>
@@ -83,34 +109,49 @@ function MyStudents() {
         </nav>
 
         <div className="teacher-logout">
+
           <Link to="/login">
             Logout
           </Link>
+
         </div>
 
       </aside>
 
 
-      {/* MAIN CONTENT */}
+      {/* =====================================
+          MAIN CONTENT
+      ===================================== */}
 
       <main className="teacher-main">
 
+        {/* HEADER */}
+
         <div className="teacher-topbar">
 
-          <h1>
-            My Students
-          </h1>
+          <div>
 
-          <p>
-            Students who are currently learning with you.
-          </p>
+            <h1>
+              My Students
+            </h1>
+
+            <p>
+              Students who are currently
+              learning with you.
+            </p>
+
+          </div>
 
         </div>
 
 
-        {/* STATISTICS */}
+        {/* =====================================
+            STATISTICS
+        ===================================== */}
 
         <div className="teacher-statistics">
+
+          {/* TOTAL STUDENTS */}
 
           <div className="teacher-stat-card">
 
@@ -133,6 +174,8 @@ function MyStudents() {
           </div>
 
 
+          {/* ACTIVE STUDENTS */}
+
           <div className="teacher-stat-card">
 
             <span>
@@ -146,12 +189,30 @@ function MyStudents() {
               </p>
 
               <h2>
-                {
-                  students.filter(
-                    (student) =>
-                      student.status === "Active"
-                  ).length
-                }
+                {activeStudents}
+              </h2>
+
+            </div>
+
+          </div>
+
+
+          {/* PLANS */}
+
+          <div className="teacher-stat-card">
+
+            <span>
+              📦
+            </span>
+
+            <div>
+
+              <p>
+                Active Plans
+              </p>
+
+              <h2>
+                {uniquePlans}
               </h2>
 
             </div>
@@ -161,7 +222,9 @@ function MyStudents() {
         </div>
 
 
-        {/* STUDENTS */}
+        {/* =====================================
+            STUDENTS
+        ===================================== */}
 
         {students.length === 0 ? (
 
@@ -181,8 +244,9 @@ function MyStudents() {
             </h2>
 
             <p>
-              Students who purchase a plan with
-              you will automatically appear here.
+              Students who purchase a plan
+              with you will automatically
+              appear here.
             </p>
 
           </div>
@@ -191,78 +255,129 @@ function MyStudents() {
 
           <div className="teacher-students-list">
 
-            {students.map((student) => (
+            {students.map(
+              (student) => (
 
-              <div
-                className="teacher-student-card"
-                key={student.id}
-              >
+                <div
+                  className="teacher-student-card"
+                  key={student.id}
+                >
 
-                {/* AVATAR */}
+                  {/* =================================
+                      AVATAR
+                  ================================= */}
 
-                <div className="teacher-student-avatar">
-                  👨‍🎓
-                </div>
+                  <div className="teacher-student-avatar">
+                    👨‍🎓
+                  </div>
 
 
-                {/* INFORMATION */}
+                  {/* =================================
+                      STUDENT INFORMATION
+                  ================================= */}
 
-                <div className="teacher-student-info">
+                  <div className="teacher-student-info">
 
-                  <h2>
-                    {student.student}
-                  </h2>
+                    <h2>
+                      {student.student}
+                    </h2>
 
-                  <p>
-                    Subject: {student.subject}
-                  </p>
+                    <p>
+                      Subject:{" "}
+                      {student.subject ||
+                        "Not specified"}
+                    </p>
 
-                  <div className="teacher-student-meta">
+
+                    {/* PLAN */}
+
+                    <div
+                      style={{
+                        marginTop: "12px",
+                        marginBottom: "12px",
+                      }}
+                    >
+
+                      <span
+                        style={{
+                          display: "inline-block",
+                          padding:
+                            "7px 14px",
+                          borderRadius:
+                            "20px",
+                          background:
+                            "#eef2ff",
+                          color:
+                            "#4f46e5",
+                          fontWeight:
+                            "600",
+                          fontSize:
+                            "14px",
+                        }}
+                      >
+                        📦{" "}
+                        {student.plan ||
+                          "No Plan"}
+                      </span>
+
+                    </div>
+
+
+                    {/* META */}
+
+                    <div className="teacher-student-meta">
+
+                      <span>
+                        📚{" "}
+                        {student.classes ||
+                          "Classes not specified"}
+                      </span>
+
+                      <span>
+                        Status:{" "}
+                        <strong>
+                          {student.status ||
+                            "Active"}
+                        </strong>
+                      </span>
+
+                    </div>
+
+                  </div>
+
+
+                  {/* =================================
+                      PLAN INFORMATION
+                  ================================= */}
+
+                  <div
+                    className="teacher-student-payment"
+                    style={{
+                      minWidth: "150px",
+                    }}
+                  >
+
+                    <strong>
+                      📦 Plan Selected
+                    </strong>
 
                     <span>
-                      Plan: {student.plan}
+                      {student.plan ||
+                        "Not selected"}
                     </span>
 
-                    <span>
-                      Classes: {student.classes}
-                    </span>
-
-                    <span>
-                      Status:{" "}
-                      <strong>
-                        {student.status}
-                      </strong>
-                    </span>
+                    <small>
+                      Joined:{" "}
+                      {student.joinedDate ||
+                        "Not available"}
+                    </small>
 
                   </div>
 
                 </div>
 
-
-                {/* PAYMENT */}
-
-                <div className="teacher-student-payment">
-
-                  <strong>
-                    ₹
-                    {Number(
-                      student.amount || 0
-                    ).toLocaleString("en-IN")}
-                  </strong>
-
-                  <span>
-                    / month
-                  </span>
-
-                  <small>
-                    Joined: {student.joinedDate}
-                  </small>
-
-                </div>
-
-              </div>
-
-            ))}
+              )
+            )}
 
           </div>
 

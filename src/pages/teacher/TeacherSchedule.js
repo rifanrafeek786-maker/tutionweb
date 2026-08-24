@@ -3,25 +3,12 @@ import { Link } from "react-router-dom";
 
 function TeacherSchedule() {
   const [schedules, setSchedules] = useState([]);
-  const [classes, setClasses] = useState([]);
-
-  const [form, setForm] = useState({
-    classId: "",
-    date: "",
-    time: "",
-  });
-
-
-  // =========================================
-  // LOAD TEACHER DATA
-  // =========================================
 
   useEffect(() => {
-    loadData();
+    loadSchedules();
   }, []);
 
-
-  const loadData = () => {
+  const loadSchedules = () => {
     const loggedInTeacher =
       JSON.parse(
         localStorage.getItem("loggedInTeacher")
@@ -32,298 +19,78 @@ function TeacherSchedule() {
         localStorage.getItem("classes")
       ) || [];
 
-    const savedSchedules =
-      JSON.parse(
-        localStorage.getItem("teacherSchedules")
-      ) || [];
-
-
     if (!loggedInTeacher) {
-      setClasses([]);
       setSchedules([]);
       return;
     }
 
-
-    // =========================================
-    // GET THIS TEACHER'S CLASSES
-    // =========================================
-
-    const myClasses =
-      savedClasses.filter(
-        (item) =>
+    // Get only this teacher's classes
+    const mySchedules = savedClasses.filter(
+      (item) =>
+        (
           String(item.teacherId) ===
-            String(loggedInTeacher.id) ||
-          item.teacher ===
-            loggedInTeacher.name
-      );
-
-
-    // =========================================
-    // GET THIS TEACHER'S SCHEDULES
-    // =========================================
-
-    const mySchedules =
-      savedSchedules.filter(
-        (schedule) =>
-          String(schedule.teacherId) ===
           String(loggedInTeacher.id)
-      );
+        ) &&
+        item.scheduleDate &&
+        item.startTime &&
+        item.endTime
+    );
 
+    // Sort by date and time
+    mySchedules.sort((a, b) => {
+      const first =
+        `${a.scheduleDate} ${a.startTime}`;
 
-    setClasses(myClasses);
+      const second =
+        `${b.scheduleDate} ${b.startTime}`;
+
+      return first.localeCompare(second);
+    });
+
     setSchedules(mySchedules);
   };
 
-
-  // =========================================
-  // FORM CHANGE
-  // =========================================
-
-  const handleChange = (e) => {
-
-    const {
-      name,
-      value,
-    } = e.target;
-
-
-    setForm({
-      ...form,
-      [name]: value,
-    });
-  };
-
-
-  // =========================================
-  // ADD SCHEDULE
-  // =========================================
-
-  const handleSubmit = (e) => {
-
-    e.preventDefault();
-
-
-    const loggedInTeacher =
-      JSON.parse(
-        localStorage.getItem("loggedInTeacher")
-      );
-
-
-    if (!loggedInTeacher) {
-
-      alert(
-        "Teacher login not found."
-      );
-
-      return;
-    }
-
-
-    if (!form.classId) {
-
-      alert(
-        "Please select a class."
-      );
-
-      return;
-    }
-
-
-    if (!form.date) {
-
-      alert(
-        "Please select a date."
-      );
-
-      return;
-    }
-
-
-    if (!form.time) {
-
-      alert(
-        "Please select a time."
-      );
-
-      return;
-    }
-
-
-    // =========================================
-    // GET SELECTED CLASS
-    // =========================================
-
-    const selectedClass =
-      classes.find(
-        (item) =>
-          String(item.id) ===
-          String(form.classId)
-      );
-
-
-    if (!selectedClass) {
-
-      alert(
-        "Selected class not found."
-      );
-
-      return;
-    }
-
-
-    // =========================================
-    // CREATE SCHEDULE
-    // =========================================
-
-    const newSchedule = {
-
-      id: Date.now(),
-
-      teacherId:
-        loggedInTeacher.id,
-
-      teacher:
-        loggedInTeacher.name,
-
-      classId:
-        selectedClass.id,
-
-      className:
-        selectedClass.name,
-
-      studentId:
-        selectedClass.studentId,
-
-      student:
-        selectedClass.student,
-
-      subject:
-        selectedClass.subject,
-
-      date:
-        form.date,
-
-      time:
-        form.time,
-
-      status:
-        "Scheduled",
+  // Refresh when coming back to this page
+  useEffect(() => {
+    const handleFocus = () => {
+      loadSchedules();
     };
 
-
-    // =========================================
-    // GET EXISTING SCHEDULES
-    // =========================================
-
-    const existingSchedules =
-      JSON.parse(
-        localStorage.getItem(
-          "teacherSchedules"
-        )
-      ) || [];
-
-
-    // =========================================
-    // SAVE
-    // =========================================
-
-    const updatedSchedules = [
-      ...existingSchedules,
-      newSchedule,
-    ];
-
-
-    localStorage.setItem(
-      "teacherSchedules",
-      JSON.stringify(
-        updatedSchedules
-      )
+    window.addEventListener(
+      "focus",
+      handleFocus
     );
 
-
-    // =========================================
-    // UPDATE SCREEN
-    // =========================================
-
-    setSchedules(
-      updatedSchedules.filter(
-        (schedule) =>
-          String(schedule.teacherId) ===
-          String(loggedInTeacher.id)
-      )
-    );
-
-
-    // =========================================
-    // CLEAR FORM
-    // =========================================
-
-    setForm({
-      classId: "",
-      date: "",
-      time: "",
-    });
-
-
-    alert(
-      "Class scheduled successfully!"
-    );
-  };
-
-
-  // =========================================
-  // DELETE SCHEDULE
-  // =========================================
-
-  const handleDelete = (id) => {
-
-    const confirmDelete =
-      window.confirm(
-        "Are you sure you want to delete this schedule?"
+    return () => {
+      window.removeEventListener(
+        "focus",
+        handleFocus
       );
+    };
+  }, []);
 
-
-    if (!confirmDelete) {
-      return;
+  // Format date
+  const formatDate = (date) => {
+    if (!date) {
+      return "Not scheduled";
     }
 
+    const selectedDate =
+      new Date(`${date}T00:00:00`);
 
-    const existingSchedules =
-      JSON.parse(
-        localStorage.getItem(
-          "teacherSchedules"
-        )
-      ) || [];
-
-
-    const updatedSchedules =
-      existingSchedules.filter(
-        (schedule) =>
-          schedule.id !== id
-      );
-
-
-    localStorage.setItem(
-      "teacherSchedules",
-      JSON.stringify(
-        updatedSchedules
-      )
-    );
-
-
-    setSchedules(
-      schedules.filter(
-        (schedule) =>
-          schedule.id !== id
-      )
+    return selectedDate.toLocaleDateString(
+      "en-IN",
+      {
+        weekday: "long",
+        day: "numeric",
+        month: "long",
+        year: "numeric",
+      }
     );
   };
-
 
   return (
     <div className="teacher-dashboard">
-
 
       {/* =====================================
           SIDEBAR
@@ -334,7 +101,6 @@ function TeacherSchedule() {
         <div className="teacher-logo">
           TuitionWeb
         </div>
-
 
         <nav className="teacher-nav">
 
@@ -375,7 +141,6 @@ function TeacherSchedule() {
 
         </nav>
 
-
         <div className="teacher-logout">
 
           <Link to="/login">
@@ -388,180 +153,119 @@ function TeacherSchedule() {
 
 
       {/* =====================================
-          MAIN
+          MAIN CONTENT
       ===================================== */}
 
       <main className="teacher-main">
-
 
         {/* HEADER */}
 
         <div className="teacher-topbar">
 
-          <h1>
-            Schedule
-          </h1>
+          <div>
 
-          <p>
-            Schedule your existing classes.
-          </p>
+            <h1>
+              My Schedule
+            </h1>
+
+            <p>
+              View your upcoming classes and
+              teaching schedule.
+            </p>
+
+          </div>
 
         </div>
 
 
         {/* =====================================
-            ADD SCHEDULE
+            STATISTICS
         ===================================== */}
 
-        <div className="teacher-welcome-card">
+        <div className="teacher-statistics">
 
-          <h2>
-            Schedule a Class
-          </h2>
+          <div className="teacher-stat-card">
 
+            <span>
+              📅
+            </span>
 
-          {classes.length === 0 ? (
-
-            <div
-              style={{
-                marginTop: "20px",
-              }}
-            >
+            <div>
 
               <p>
-                You don't have any classes yet.
+                Scheduled Classes
               </p>
 
-              <Link
-                to="/teacher/classes"
-                className="auth-button"
-                style={{
-                  display: "inline-block",
-                  marginTop: "10px",
-                  textDecoration: "none",
-                }}
-              >
-                Go to My Classes
-              </Link>
+              <h2>
+                {schedules.length}
+              </h2>
 
             </div>
 
-          ) : (
-
-            <form
-              onSubmit={handleSubmit}
-              style={{
-                marginTop: "20px",
-              }}
-            >
+          </div>
 
 
-              {/* CLASS */}
+          <div className="teacher-stat-card">
 
-              <div className="form-group">
+            <span>
+              👨‍🎓
+            </span>
 
-                <label>
-                  Class
-                </label>
+            <div>
 
-                <select
-                  name="classId"
-                  value={form.classId}
-                  onChange={handleChange}
-                  required
-                >
+              <p>
+                Students
+              </p>
 
-                  <option value="">
-                    Select Class
-                  </option>
-
-                  {classes.map(
-                    (item) => (
-
-                      <option
-                        key={item.id}
-                        value={item.id}
-                      >
-                        {item.name} —{" "}
-                        {item.student}
-                      </option>
-
+              <h2>
+                {
+                  new Set(
+                    schedules.map(
+                      (item) =>
+                        item.studentId
                     )
-                  )}
+                  ).size
+                }
+              </h2>
 
-                </select>
+            </div>
 
-              </div>
-
-
-              {/* DATE */}
-
-              <div className="form-group">
-
-                <label>
-                  Date
-                </label>
-
-                <input
-                  type="date"
-                  name="date"
-                  value={form.date}
-                  onChange={handleChange}
-                  required
-                />
-
-              </div>
+          </div>
 
 
-              {/* TIME */}
+          <div className="teacher-stat-card">
 
-              <div className="form-group">
+            <span>
+              📚
+            </span>
 
-                <label>
-                  Time
-                </label>
+            <div>
 
-                <input
-                  type="time"
-                  name="time"
-                  value={form.time}
-                  onChange={handleChange}
-                  required
-                />
+              <p>
+                Subjects
+              </p>
 
-              </div>
+              <h2>
+                {
+                  new Set(
+                    schedules.map(
+                      (item) =>
+                        item.subject
+                    )
+                  ).size
+                }
+              </h2>
 
+            </div>
 
-              <button
-                type="submit"
-                className="auth-button"
-              >
-                Schedule Class
-              </button>
-
-            </form>
-
-          )}
+          </div>
 
         </div>
 
 
         {/* =====================================
-            UPCOMING CLASSES
+            SCHEDULE
         ===================================== */}
-
-        <div
-          style={{
-            marginTop: "30px",
-          }}
-        >
-
-          <h2>
-            Upcoming Classes
-          </h2>
-
-        </div>
-
 
         {schedules.length === 0 ? (
 
@@ -569,7 +273,7 @@ function TeacherSchedule() {
 
             <div
               style={{
-                fontSize: "45px",
+                fontSize: "50px",
                 marginBottom: "15px",
               }}
             >
@@ -577,18 +281,37 @@ function TeacherSchedule() {
             </div>
 
             <h2>
-              No Schedule Yet
+              No Classes Scheduled
             </h2>
 
             <p>
-              Your scheduled classes will appear here.
+              Your scheduled classes will appear
+              here after you set a schedule in
+              My Classes.
             </p>
+
+            <Link
+              to="/teacher/classes"
+              className="auth-button"
+              style={{
+                display: "inline-block",
+                marginTop: "20px",
+                textDecoration: "none",
+              }}
+            >
+              Go to My Classes
+            </Link>
 
           </div>
 
         ) : (
 
-          <div className="teacher-students-list">
+          <div
+            className="teacher-students-list"
+            style={{
+              marginTop: "30px",
+            }}
+          >
 
             {schedules.map(
               (schedule) => (
@@ -598,40 +321,65 @@ function TeacherSchedule() {
                   key={schedule.id}
                 >
 
+                  {/* ICON */}
+
                   <div className="teacher-student-avatar">
-                    📅
+                    📚
                   </div>
 
+
+                  {/* CLASS INFORMATION */}
 
                   <div className="teacher-student-info">
 
                     <h2>
-                      {schedule.className}
+                      {schedule.name ||
+                        schedule.className ||
+                        schedule.subject ||
+                        "Class"}
                     </h2>
 
                     <p>
-                      Student:{" "}
-                      {schedule.student}
+                      👨‍🎓 Student:{" "}
+                      <strong>
+                        {schedule.student ||
+                          schedule.studentName ||
+                          "Student"}
+                      </strong>
                     </p>
 
                     <p>
-                      Subject:{" "}
-                      {schedule.subject}
+                      📖 Subject:{" "}
+                      <strong>
+                        {schedule.subject ||
+                          "Not specified"}
+                      </strong>
                     </p>
 
-
-                    <div className="teacher-student-meta">
+                    <div
+                      className="teacher-student-meta"
+                    >
 
                       <span>
-                        📅 {schedule.date}
+                        📅{" "}
+                        {formatDate(
+                          schedule.scheduleDate
+                        )}
                       </span>
 
                       <span>
-                        🕐 {schedule.time}
+                        🕐{" "}
+                        {schedule.startTime}
+                        {" - "}
+                        {schedule.endTime}
                       </span>
 
                       <span>
-                        {schedule.status}
+                        Status:{" "}
+                        <strong>
+                          {schedule.status ||
+                            "Active"}
+                        </strong>
                       </span>
 
                     </div>
@@ -639,18 +387,17 @@ function TeacherSchedule() {
                   </div>
 
 
+                  {/* SCHEDULE STATUS */}
+
                   <div className="teacher-student-payment">
 
-                    <button
-                      className="delete-payment-button"
-                      onClick={() =>
-                        handleDelete(
-                          schedule.id
-                        )
-                      }
-                    >
-                      Delete
-                    </button>
+                    <strong>
+                      Scheduled
+                    </strong>
+
+                    <small>
+                      Set by Teacher
+                    </small>
 
                   </div>
 
