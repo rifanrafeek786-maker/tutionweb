@@ -1,10 +1,6 @@
-import React, { useEffect, useState } from "react";
-import {
-  Link,
-  useSearchParams,
-  useNavigate,
-} from "react-router-dom";
 
+import React, { useEffect, useState } from "react";
+import { Link, useSearchParams, useNavigate } from "react-router-dom";
 import teachers from "../../data/teachers";
 
 function Payment() {
@@ -12,12 +8,38 @@ function Payment() {
   const navigate = useNavigate();
 
   const teacherId = searchParams.get("teacher");
-  const plan = searchParams.get("plan");
+  const planType = searchParams.get("plan");
 
   const [teacher, setTeacher] = useState(null);
 
   // =========================================
-  // GET SELECTED TEACHER
+  // PLAN DATA
+  // =========================================
+
+  const plans = {
+    basic: {
+      name: "Basic Plan",
+      price: 1000,
+      classes: 8,
+    },
+
+    standard: {
+      name: "Standard Plan",
+      price: 1500,
+      classes: 12,
+    },
+
+    premium: {
+      name: "Premium Plan",
+      price: 2000,
+      classes: 16,
+    },
+  };
+
+  const selectedPlan = plans[planType];
+
+  // =========================================
+  // LOAD TEACHER
   // =========================================
 
   useEffect(() => {
@@ -34,126 +56,100 @@ function Payment() {
         String(item.id) === String(teacherId)
     );
 
-    setTeacher(selectedTeacher);
+    setTeacher(selectedTeacher || null);
   }, [teacherId]);
-
-
-  // =========================================
-  // PLANS
-  // =========================================
-
-  const plans = {
-    basic: {
-      name: "Basic Plan",
-      price: 1000,
-      classes: "8 classes per month",
-    },
-
-    standard: {
-      name: "Standard Plan",
-      price: 1500,
-      classes: "12 classes per month",
-    },
-
-    premium: {
-      name: "Premium Plan",
-      price: 2000,
-      classes: "16 classes per month",
-    },
-  };
-
-  const selectedPlan = plans[plan];
-
 
   // =========================================
   // HANDLE PAYMENT
   // =========================================
 
   const handlePayment = () => {
-
+    // Check teacher and plan
     if (!teacher || !selectedPlan) {
-      alert("Selection not found.");
+      alert(
+        "Teacher or plan selection not found."
+      );
       return;
     }
 
-
-    // =========================================
+    // =======================================
     // GET LOGGED-IN STUDENT
-    // =========================================
+    // =======================================
 
     const loggedInStudent =
       JSON.parse(
         localStorage.getItem("loggedInStudent")
       );
 
-
     if (!loggedInStudent) {
-      alert("Please login as a student first.");
+      alert(
+        "Please login as a student first."
+      );
+
       navigate("/login");
       return;
     }
 
+    // =======================================
+    // STUDENT INFORMATION
+    // =======================================
 
-    // =========================================
+    const studentId =
+      loggedInStudent.id ||
+      loggedInStudent.studentId ||
+      null;
+
+    const studentName =
+      loggedInStudent.name ||
+      loggedInStudent.studentName ||
+      "Student";
+
+    // =======================================
     // GET EXISTING PAYMENTS
-    // =========================================
+    // =======================================
 
     const existingPayments =
       JSON.parse(
         localStorage.getItem("payments")
       ) || [];
 
-
-    // =========================================
-    // CREATE PAYMENT
-    // =========================================
+    // =======================================
+    // CREATE NEW PAYMENT
+    // =======================================
 
     const newPayment = {
-
       id: Date.now(),
 
-      student:
-        loggedInStudent.name ||
-        "Student",
+      studentId: studentId,
 
-      studentId:
-        loggedInStudent.id ||
-        null,
+      student: studentName,
 
-      teacher:
-        teacher.name,
+      teacherId: teacher.id,
 
-      teacherId:
-        teacher.id,
+      teacher: teacher.name,
 
       subject:
-        teacher.subject,
+        teacher.subject || "General",
 
-      plan:
-        selectedPlan.name,
+      plan: selectedPlan.name,
 
-      planType:
-        plan,
+      planType: planType,
 
-      amount:
-        selectedPlan.price,
+      amount: selectedPlan.price,
 
-      classes:
-        selectedPlan.classes,
+      classes: selectedPlan.classes,
 
       date:
         new Date().toLocaleDateString(
           "en-IN"
         ),
 
-      status:
-        "Paid",
+      status: "Paid",
     };
 
-
-    // =========================================
+    // =======================================
     // SAVE PAYMENT
-    // =========================================
+    // =======================================
 
     const updatedPayments = [
       ...existingPayments,
@@ -165,10 +161,9 @@ function Payment() {
       JSON.stringify(updatedPayments)
     );
 
-
-    // =========================================
-    // CREATE TEACHER-STUDENT RELATIONSHIP
-    // =========================================
+    // =======================================
+    // SAVE TEACHER-STUDENT CONNECTION
+    // =======================================
 
     const existingRelationships =
       JSON.parse(
@@ -177,47 +172,94 @@ function Payment() {
         )
       ) || [];
 
-
-    // Check if this student already belongs
-    // to this teacher
-
-    const alreadyAssigned =
-      existingRelationships.some(
+    const existingConnection =
+      existingRelationships.find(
         (item) =>
           String(item.studentId) ===
-            String(loggedInStudent.id) &&
+            String(studentId) &&
           String(item.teacherId) ===
             String(teacher.id)
       );
 
+    if (existingConnection) {
+      // UPDATE EXISTING CONNECTION
 
-    if (!alreadyAssigned) {
+      const updatedRelationships =
+        existingRelationships.map(
+          (item) => {
+            if (
+              String(item.studentId) ===
+                String(studentId) &&
+              String(item.teacherId) ===
+                String(teacher.id)
+            ) {
+              return {
+                ...item,
+
+                studentId: studentId,
+
+                student: studentName,
+
+                teacherId: teacher.id,
+
+                teacher: teacher.name,
+
+                subject:
+                  teacher.subject ||
+                  "General",
+
+                plan: selectedPlan.name,
+
+                planType: planType,
+
+                amount:
+                  selectedPlan.price,
+
+                classes:
+                  selectedPlan.classes,
+
+                status: "Active",
+
+                paymentStatus: "Paid",
+
+                updatedDate:
+                  new Date().toLocaleDateString(
+                    "en-IN"
+                  ),
+              };
+            }
+
+            return item;
+          }
+        );
+
+      localStorage.setItem(
+        "teacherStudents",
+        JSON.stringify(
+          updatedRelationships
+        )
+      );
+    } else {
+      // CREATE NEW CONNECTION
 
       const newRelationship = {
-
         id: Date.now(),
 
-        studentId:
-          loggedInStudent.id,
+        studentId: studentId,
 
-        student:
-          loggedInStudent.name ||
-          "Student",
+        student: studentName,
 
-        teacherId:
-          teacher.id,
+        teacherId: teacher.id,
 
-        teacher:
-          teacher.name,
+        teacher: teacher.name,
 
         subject:
-          teacher.subject,
+          teacher.subject ||
+          "General",
 
-        plan:
-          selectedPlan.name,
+        plan: selectedPlan.name,
 
-        planType:
-          plan,
+        planType: planType,
 
         amount:
           selectedPlan.price,
@@ -230,16 +272,15 @@ function Payment() {
             "en-IN"
           ),
 
-        status:
-          "Active",
-      };
+        status: "Active",
 
+        paymentStatus: "Paid",
+      };
 
       const updatedRelationships = [
         ...existingRelationships,
         newRelationship,
       ];
-
 
       localStorage.setItem(
         "teacherStudents",
@@ -247,29 +288,70 @@ function Payment() {
           updatedRelationships
         )
       );
-
     }
 
+    // =======================================
+    // SAVE CURRENT STUDENT PLAN
+    // =======================================
 
-    // =========================================
-    // SUCCESS
-    // =========================================
+    const studentPlan = {
+      studentId: studentId,
 
-    alert(
-      "Payment successful! You are now connected to your teacher."
+      student: studentName,
+
+      teacherId: teacher.id,
+
+      teacher: teacher.name,
+
+      subject:
+        teacher.subject ||
+        "General",
+
+      plan: selectedPlan.name,
+
+      planType: planType,
+
+      amount:
+        selectedPlan.price,
+
+      classes:
+        selectedPlan.classes,
+
+      startDate:
+        new Date().toLocaleDateString(
+          "en-IN"
+        ),
+
+      paymentStatus: "Paid",
+
+      status: "Active",
+    };
+
+    localStorage.setItem(
+      "studentPlan",
+      JSON.stringify(studentPlan)
     );
 
+    // =======================================
+    // SUCCESS MESSAGE
+    // =======================================
+
+    alert(
+      "Payment successful! Your monthly plan is now active."
+    );
+
+    // =======================================
+    // GO TO STUDENT DASHBOARD
+    // =======================================
 
     navigate("/student/dashboard");
   };
 
-
   // =========================================
-  // CHECK SELECTION
+  // INVALID SELECTION
   // =========================================
 
   if (!teacher || !selectedPlan) {
-
     return (
       <div className="payment-page">
 
@@ -280,12 +362,18 @@ function Payment() {
           </h1>
 
           <p>
-            Please select a teacher and plan again.
+            Please select a teacher and
+            monthly plan again.
           </p>
 
           <Link
             to="/student/teachers"
             className="back-to-plan"
+            style={{
+              display: "inline-block",
+              marginTop: "20px",
+              textDecoration: "none",
+            }}
           >
             ← Back to Teachers
           </Link>
@@ -296,7 +384,6 @@ function Payment() {
     );
   }
 
-
   // =========================================
   // PAYMENT PAGE
   // =========================================
@@ -304,7 +391,7 @@ function Payment() {
   return (
     <div className="payment-page">
 
-      {/* Header */}
+      {/* HEADER */}
 
       <div className="payment-header">
 
@@ -313,13 +400,14 @@ function Payment() {
         </h1>
 
         <p>
-          Review your selection before continuing.
+          Review your monthly plan before
+          completing payment.
         </p>
 
       </div>
 
 
-      {/* Payment Card */}
+      {/* PAYMENT CARD */}
 
       <div className="payment-card">
 
@@ -328,7 +416,7 @@ function Payment() {
         </h2>
 
 
-        {/* Teacher */}
+        {/* TEACHER */}
 
         <div className="payment-row">
 
@@ -343,7 +431,7 @@ function Payment() {
         </div>
 
 
-        {/* Subject */}
+        {/* SUBJECT */}
 
         <div className="payment-row">
 
@@ -352,13 +440,14 @@ function Payment() {
           </span>
 
           <strong>
-            {teacher.subject}
+            {teacher.subject ||
+              "General"}
           </strong>
 
         </div>
 
 
-        {/* Plan */}
+        {/* PLAN */}
 
         <div className="payment-row">
 
@@ -373,7 +462,7 @@ function Payment() {
         </div>
 
 
-        {/* Classes */}
+        {/* CLASSES */}
 
         <div className="payment-row">
 
@@ -383,6 +472,8 @@ function Payment() {
 
           <strong>
             {selectedPlan.classes}
+            {" "}
+            classes / month
           </strong>
 
         </div>
@@ -391,7 +482,7 @@ function Payment() {
         <hr />
 
 
-        {/* Total */}
+        {/* TOTAL */}
 
         <div className="payment-total">
 
@@ -409,7 +500,7 @@ function Payment() {
         </div>
 
 
-        {/* Payment Method */}
+        {/* PAYMENT METHOD */}
 
         <div className="payment-method">
 
@@ -425,6 +516,7 @@ function Payment() {
               defaultChecked
             />
 
+            {" "}
             Online Payment
 
           </label>
@@ -432,9 +524,10 @@ function Payment() {
         </div>
 
 
-        {/* Payment Button */}
+        {/* PAY BUTTON */}
 
         <button
+          type="button"
           className="pay-button"
           onClick={handlePayment}
         >
@@ -442,11 +535,16 @@ function Payment() {
         </button>
 
 
-        {/* Back */}
+        {/* BACK */}
 
         <Link
           to={`/student/plan/${teacher.id}`}
           className="back-to-plan"
+          style={{
+            display: "inline-block",
+            marginTop: "15px",
+            textDecoration: "none",
+          }}
         >
           ← Back to Plans
         </Link>
@@ -458,3 +556,4 @@ function Payment() {
 }
 
 export default Payment;
+

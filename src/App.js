@@ -8,25 +8,14 @@ import {
 
 import "./App.css";
 
-/* =========================================
-   HOME
-========================================= */
-
+// HOME
 import Home from "./pages/home/Home";
 
-
-/* =========================================
-   AUTH
-========================================= */
-
+// AUTH
 import Login from "./pages/auth/Login";
 import Register from "./pages/auth/Register";
 
-
-/* =========================================
-   ADMIN
-========================================= */
-
+// ADMIN
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import AddTeacher from "./pages/admin/AddTeacher";
 import ManageTeachers from "./pages/admin/ManageTeachers";
@@ -38,11 +27,7 @@ import AdminSettings from "./pages/admin/AdminSettings";
 import AdminTeacherProfile from "./pages/admin/AdminTeacherProfile";
 import AdminLogin from "./pages/admin/AdminLogin";
 
-
-/* =========================================
-   STUDENT
-========================================= */
-
+// STUDENT
 import StudentDashboard from "./pages/student/StudentDashboard";
 import FindTeachers from "./pages/student/FindTeachers";
 import TeacherProfile from "./pages/student/TeacherProfile";
@@ -50,39 +35,32 @@ import MyTeacher from "./pages/student/MyTeacher";
 import MyClasses from "./pages/student/MyClasses";
 import MonthlyPlan from "./pages/student/MonthlyPlan";
 import Payment from "./pages/student/Payment";
-import StudentPayments from "./pages/student/StudentPayments";
+import StudentSchedule from "./pages/student/Schedule";
 
-
-/* =========================================
-   TEACHER
-========================================= */
-
+// TEACHER
 import TeacherDashboard from "./pages/teacher/TeacherDashboard";
 import MyStudents from "./pages/teacher/MyStudents";
 import TeacherMyClasses from "./pages/teacher/MyClasses";
 import TeacherSchedule from "./pages/teacher/TeacherSchedule";
 import TeacherPayments from "./pages/teacher/TeacherPayments";
 
-
 function App() {
   return (
     <BrowserRouter>
-
       <Routes>
 
-        {/* =====================================
+        {/* =========================
             HOME
-        ===================================== */}
+        ========================= */}
 
         <Route
           path="/"
           element={<Home />}
         />
 
-
-        {/* =====================================
+        {/* =========================
             AUTH
-        ===================================== */}
+        ========================= */}
 
         <Route
           path="/login"
@@ -94,20 +72,14 @@ function App() {
           element={<Register />}
         />
 
-
-        {/* =====================================
-            ADMIN DASHBOARD
-        ===================================== */}
+        {/* =========================
+            ADMIN
+        ========================= */}
 
         <Route
           path="/admin/dashboard"
           element={<AdminDashboard />}
         />
-
-
-        {/* =====================================
-            ADMIN TEACHERS
-        ===================================== */}
 
         <Route
           path="/admin/teachers"
@@ -119,20 +91,10 @@ function App() {
           element={<AddTeacher />}
         />
 
-
-        {/* =====================================
-            ADMIN STUDENTS
-        ===================================== */}
-
         <Route
           path="/admin/students"
           element={<ManageStudents />}
         />
-
-
-        {/* =====================================
-            ADMIN CLASSES
-        ===================================== */}
 
         <Route
           path="/admin/classes"
@@ -144,20 +106,10 @@ function App() {
           element={<AddClass />}
         />
 
-
-        {/* =====================================
-            ADMIN PAYMENTS
-        ===================================== */}
-
         <Route
           path="/admin/payments"
           element={<ManagePayments />}
         />
-
-
-        {/* =====================================
-            ADMIN SETTINGS
-        ===================================== */}
 
         <Route
           path="/admin/settings"
@@ -174,107 +126,57 @@ function App() {
           element={<AdminLogin />}
         />
 
-
-        {/* =====================================
-            STUDENT DASHBOARD
-        ===================================== */}
+        {/* =========================
+            STUDENT
+        ========================= */}
 
         <Route
           path="/student/dashboard"
           element={<StudentDashboard />}
         />
 
-
-        {/* =====================================
-            STUDENT FIND TEACHERS
-        ===================================== */}
-
         <Route
           path="/student/teachers"
           element={<FindTeachers />}
         />
-
-
-        {/* =====================================
-            TEACHER PROFILE
-        ===================================== */}
 
         <Route
           path="/student/teacher-profile/:id"
           element={<TeacherProfile />}
         />
 
-
-        {/* =====================================
-            MY TEACHER
-        ===================================== */}
-
         <Route
           path="/student/teacher"
           element={<MyTeacher />}
         />
-
-
-        {/* =====================================
-            MY CLASSES
-        ===================================== */}
 
         <Route
           path="/student/classes"
           element={<MyClasses />}
         />
 
-
-        {/* =====================================
-            MONTHLY PLAN
-        ===================================== */}
+        {/* MONTHLY PLANS */}
 
         <Route
           path="/student/plan/:teacherId"
           element={<MonthlyPlan />}
         />
 
-
-        {/* =====================================
-            PAYMENT
-        ===================================== */}
+        {/* PAYMENT */}
 
         <Route
           path="/student/payment"
           element={<Payment />}
         />
 
-
-        {/* =====================================
-            STUDENT PAYMENTS
-        ===================================== */}
-
-        <Route
-          path="/student/payments"
-          element={<StudentPayments />}
-        />
-
-
-        {/* =====================================
-            STUDENT SCHEDULE
-        ===================================== */}
+        {/* SCHEDULE */}
 
         <Route
           path="/student/schedule"
-          element={
-            <div style={{ padding: "40px" }}>
-              <h1>Schedule</h1>
-              <p>
-                Schedule section will be developed next.
-              </p>
-            </div>
-          }
+          element={<StudentSchedule />}
         />
 
-
-        {/* =====================================
-            STUDENT MESSAGES
-        ===================================== */}
+        {/* OTHER STUDENT PAGES */}
 
         <Route
           path="/student/messages"
@@ -288,11 +190,6 @@ function App() {
           }
         />
 
-
-        {/* =====================================
-            LEARNING PROGRESS
-        ===================================== */}
-
         <Route
           path="/student/progress"
           element={
@@ -305,94 +202,50 @@ function App() {
           }
         />
 
-
-        {/* =====================================
-            STUDENT PROFILE
-        ===================================== */}
-
         <Route
           path="/student/profile"
           element={
             <div style={{ padding: "40px" }}>
               <h1>Student Profile</h1>
               <p>
-                Student profile section will be developed soon.
+                Student profile will be developed soon.
               </p>
             </div>
           }
         />
 
-
-        {/* =====================================
-            STUDENT SETTINGS
-        ===================================== */}
-
-        <Route
-          path="/student/settings"
-          element={
-            <div style={{ padding: "40px" }}>
-              <h1>Settings</h1>
-              <p>
-                Settings section will be developed soon.
-              </p>
-            </div>
-          }
-        />
-
-
-        {/* =====================================
-            TEACHER DASHBOARD
-        ===================================== */}
+        {/* =========================
+            TEACHER
+        ========================= */}
 
         <Route
           path="/teacher/dashboard"
           element={<TeacherDashboard />}
         />
 
-
-        {/* =====================================
-            TEACHER STUDENTS
-        ===================================== */}
-
         <Route
           path="/teacher/students"
           element={<MyStudents />}
         />
-
-
-        {/* =====================================
-            TEACHER CLASSES
-        ===================================== */}
 
         <Route
           path="/teacher/classes"
           element={<TeacherMyClasses />}
         />
 
-
-        {/* =====================================
-            TEACHER SCHEDULE
-        ===================================== */}
-
         <Route
           path="/teacher/schedule"
           element={<TeacherSchedule />}
         />
-
-
-        {/* =====================================
-            TEACHER PAYMENTS
-        ===================================== */}
 
         <Route
           path="/teacher/payments"
           element={<TeacherPayments />}
         />
 
-
-        {/* =====================================
+        {/* =========================
             FALLBACK
-        ===================================== */}
+        ========================= */}
 
         <Route
           path="*"
@@ -405,7 +258,6 @@ function App() {
         />
 
       </Routes>
-
     </BrowserRouter>
   );
 }

@@ -1,37 +1,89 @@
+
 import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+
 import teachers from "../../data/teachers";
+import StudentSidebar from "./StudentSidebar";
 
 function MyTeacher() {
   const [teacher, setTeacher] = useState(null);
   const [payment, setPayment] = useState(null);
 
+  // =========================================
+  // LOAD MY TEACHER
+  // =========================================
+
   useEffect(() => {
     loadMyTeacher();
+
+    const handleFocus = () => {
+      loadMyTeacher();
+    };
+
+    window.addEventListener("focus", handleFocus);
+
+    return () => {
+      window.removeEventListener("focus", handleFocus);
+    };
   }, []);
 
   const loadMyTeacher = () => {
-    // Get logged-in student
-    const loggedInStudent =
-      JSON.parse(localStorage.getItem("loggedInStudent"));
+    // =======================================
+    // LOGGED-IN STUDENT
+    // =======================================
 
-    // Get payments
-    const savedPayments =
-      JSON.parse(localStorage.getItem("payments")) || [];
+    const loggedInStudent = JSON.parse(
+      localStorage.getItem("loggedInStudent")
+    );
 
     if (!loggedInStudent) {
+      setTeacher(null);
+      setPayment(null);
       return;
     }
 
-    // Find student's latest paid payment
-    const studentPayment = savedPayments
-      .filter(
-        (item) =>
-          String(item.studentId) ===
-            String(loggedInStudent.id) &&
-          item.status === "Paid"
-      )
-      .slice(-1)[0];
+    // =======================================
+    // GET PAYMENTS
+    // =======================================
+
+    const savedPayments =
+      JSON.parse(localStorage.getItem("payments")) || [];
+
+    const studentId =
+      loggedInStudent.id ||
+      loggedInStudent.studentId;
+
+    // =======================================
+    // FIND PAID PAYMENT
+    // =======================================
+
+    const studentPayments = savedPayments.filter((item) => {
+      const sameStudentId =
+        item.studentId &&
+        studentId &&
+        String(item.studentId) === String(studentId);
+
+      const sameStudentName =
+        loggedInStudent.name &&
+        (
+          item.student === loggedInStudent.name ||
+          item.studentName === loggedInStudent.name
+        );
+
+      return (
+        (sameStudentId || sameStudentName) &&
+        item.status === "Paid"
+      );
+    });
+
+    const studentPayment =
+      studentPayments.length > 0
+        ? studentPayments[studentPayments.length - 1]
+        : null;
+
+    // =======================================
+    // NO PAYMENT
+    // =======================================
 
     if (!studentPayment) {
       setTeacher(null);
@@ -41,17 +93,22 @@ function MyTeacher() {
 
     setPayment(studentPayment);
 
-    // Get admin-added teachers
+    // =======================================
+    // GET ALL TEACHERS
+    // =======================================
+
     const savedTeachers =
       JSON.parse(localStorage.getItem("teachers")) || [];
 
-    // Combine default + admin teachers
     const allTeachers = [
       ...teachers,
       ...savedTeachers,
     ];
 
-    // Try teacher ID first
+    // =======================================
+    // FIND TEACHER BY ID
+    // =======================================
+
     let selectedTeacher = null;
 
     if (studentPayment.teacherId) {
@@ -62,9 +119,14 @@ function MyTeacher() {
       );
     }
 
-    // If teacherId is not available,
-    // find using teacher name
-    if (!selectedTeacher && studentPayment.teacher) {
+    // =======================================
+    // FIND TEACHER BY NAME
+    // =======================================
+
+    if (
+      !selectedTeacher &&
+      studentPayment.teacher
+    ) {
       selectedTeacher = allTeachers.find(
         (item) =>
           item.name === studentPayment.teacher
@@ -74,105 +136,47 @@ function MyTeacher() {
     setTeacher(selectedTeacher || null);
   };
 
+  // =========================================
+  // PAGE
+  // =========================================
+
   return (
     <div className="student-dashboard">
 
-      {/* ==============================
+      {/* =====================================
           SIDEBAR
-      ============================== */}
+      ===================================== */}
 
-      <aside className="student-sidebar">
-
-        <div className="student-logo">
-          TuitionWeb
-        </div>
-
-        <nav className="student-nav">
-
-          <Link to="/student/dashboard">
-            Dashboard
-          </Link>
-
-          <Link to="/student/teachers">
-            Find Teachers
-          </Link>
-
-          <Link
-            to="/student/teacher"
-            className="active"
-          >
-            My Teacher
-          </Link>
-
-          <Link to="/student/classes">
-            My Classes
-          </Link>
-
-          <Link to="/student/schedule">
-            Schedule
-          </Link>
-
-          <Link to="/student/plan">
-            Monthly Plan
-          </Link>
-
-          <Link to="/student/payments">
-            Payments
-          </Link>
-
-          <Link to="/student/messages">
-            Messages
-          </Link>
-
-          <Link to="/student/progress">
-            Learning Progress
-          </Link>
-
-          <Link to="/student/profile">
-            Profile
-          </Link>
-
-        </nav>
-
-        <div className="student-logout">
-
-          <Link to="/login">
-            Logout
-          </Link>
-
-        </div>
-
-      </aside>
+      <StudentSidebar />
 
 
-      {/* ==============================
+      {/* =====================================
           MAIN CONTENT
-      ============================== */}
+      ===================================== */}
 
       <main className="student-main">
 
-        {/* Header */}
+        {/* HEADER */}
 
         <div className="student-topbar">
 
           <div>
-
             <h1>
               My Teacher
             </h1>
 
             <p>
-              View your current teacher and learning plan.
+              View your current teacher and
+              learning plan.
             </p>
-
           </div>
 
         </div>
 
 
-        {/* ==============================
+        {/* =====================================
             NO TEACHER
-        ============================== */}
+        ===================================== */}
 
         {!teacher ? (
 
@@ -188,7 +192,8 @@ function MyTeacher() {
 
             <p>
               You don't have an active teacher yet.
-              Choose a teacher and purchase a plan to start learning.
+              Choose a teacher and purchase a plan
+              to start learning.
             </p>
 
             <Link
@@ -202,22 +207,17 @@ function MyTeacher() {
 
         ) : (
 
-          /* ==============================
-             TEACHER CARD
-          ============================== */
-
           <div className="my-teacher-container">
+
+            {/* =================================
+                TEACHER CARD
+            ================================= */}
 
             <div className="my-teacher-card">
 
-              {/* Teacher Avatar */}
-
               <div className="my-teacher-avatar">
-                👨‍🏫
+                {teacher.avatar || "👨‍🏫"}
               </div>
-
-
-              {/* Teacher Info */}
 
               <div className="my-teacher-info">
 
@@ -230,7 +230,8 @@ function MyTeacher() {
                 </h2>
 
                 <p className="my-teacher-subject">
-                  {teacher.subject || "Subject not specified"}
+                  {teacher.subject ||
+                    "Subject not specified"}
                 </p>
 
                 {teacher.experience && (
@@ -265,9 +266,9 @@ function MyTeacher() {
             </div>
 
 
-            {/* ==============================
+            {/* =================================
                 CURRENT PLAN
-            ============================== */}
+            ================================= */}
 
             {payment && (
 
@@ -280,11 +281,11 @@ function MyTeacher() {
                   </span>
 
                   <h3>
-                    {payment.plan || "Monthly Plan"}
+                    {payment.plan ||
+                      "Monthly Plan"}
                   </h3>
 
                 </div>
-
 
                 <div className="my-teacher-plan-price">
 
@@ -306,9 +307,9 @@ function MyTeacher() {
             )}
 
 
-            {/* ==============================
+            {/* =================================
                 TEACHER DETAILS
-            ============================== */}
+            ================================= */}
 
             <div className="my-teacher-details">
 
@@ -338,7 +339,8 @@ function MyTeacher() {
                   </span>
 
                   <strong>
-                    {teacher.subject || "Not specified"}
+                    {teacher.subject ||
+                      "Not specified"}
                   </strong>
 
                 </div>
@@ -351,7 +353,8 @@ function MyTeacher() {
                   </span>
 
                   <strong>
-                    {payment?.plan || "Not available"}
+                    {payment?.plan ||
+                      "Not available"}
                   </strong>
 
                 </div>
@@ -364,7 +367,8 @@ function MyTeacher() {
                   </span>
 
                   <strong className="teacher-paid">
-                    {payment?.status || "Paid"}
+                    {payment?.status ||
+                      "Paid"}
                   </strong>
 
                 </div>
@@ -374,7 +378,9 @@ function MyTeacher() {
             </div>
 
 
-            {/* Actions */}
+            {/* =================================
+                ACTIONS
+            ================================= */}
 
             <div className="my-teacher-actions">
 

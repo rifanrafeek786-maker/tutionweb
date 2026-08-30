@@ -1,217 +1,250 @@
+
 import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+import StudentSidebar from "./StudentSidebar";
 
 function StudentDashboard() {
   const [student, setStudent] = useState(null);
-  const [payment, setPayment] = useState(null);
+  const [teacher, setTeacher] = useState(null);
   const [classes, setClasses] = useState([]);
+  const [payments, setPayments] = useState([]);
 
-  // ==============================
+  // =========================================
   // LOAD STUDENT DATA
-  // ==============================
+  // =========================================
 
   useEffect(() => {
-    loadStudentData();
+    loadDashboardData();
+
+    const handleFocus = () => {
+      loadDashboardData();
+    };
+
+    window.addEventListener("focus", handleFocus);
+
+    return () => {
+      window.removeEventListener("focus", handleFocus);
+    };
   }, []);
 
-  const loadStudentData = () => {
-    // ------------------------------
-    // Logged-in student
-    // ------------------------------
+  // =========================================
+  // LOAD DASHBOARD DATA
+  // =========================================
 
-    const loggedInStudent =
-      JSON.parse(
-        localStorage.getItem("loggedInStudent")
-      );
+  const loadDashboardData = () => {
+    // Logged-in student
+    const loggedInStudent = JSON.parse(
+      localStorage.getItem("loggedInStudent")
+    );
 
     setStudent(loggedInStudent);
 
+    if (!loggedInStudent) {
+      setTeacher(null);
+      setClasses([]);
+      setPayments([]);
+      return;
+    }
 
-    // ------------------------------
-    // Payments
-    // ------------------------------
+    const studentId =
+      loggedInStudent.id ||
+      loggedInStudent.studentId;
+
+    // =======================================
+    // LOAD PAYMENTS
+    // =======================================
 
     const savedPayments =
       JSON.parse(
         localStorage.getItem("payments")
       ) || [];
 
+    const studentPayments =
+      savedPayments.filter(
+        (item) =>
+          String(item.studentId) ===
+          String(studentId)
+      );
 
-    // Find payment belonging to student
+    setPayments(studentPayments);
 
-    let studentPayment = null;
+    // =======================================
+    // FIND CURRENT TEACHER
+    // =======================================
 
-    if (loggedInStudent) {
-      studentPayment = savedPayments
-        .filter(
-          (item) =>
-            String(item.studentId) ===
-            String(loggedInStudent.id) &&
-            item.status === "Paid"
+    const teacherStudents =
+      JSON.parse(
+        localStorage.getItem(
+          "teacherStudents"
         )
-        .slice(-1)[0];
+      ) || [];
+
+    const connection =
+      teacherStudents.find(
+        (item) =>
+          String(item.studentId) ===
+          String(studentId) &&
+          item.status === "Active"
+      );
+
+    if (connection) {
+      setTeacher({
+        id: connection.teacherId,
+        name:
+          connection.teacher ||
+          "Teacher",
+        subject:
+          connection.subject ||
+          "General",
+        plan:
+          connection.plan ||
+          "Monthly Plan",
+      });
+    } else {
+      setTeacher(null);
     }
 
-    setPayment(studentPayment || null);
-
-
-    // ------------------------------
-    // Classes
-    // ------------------------------
+    // =======================================
+    // LOAD CLASSES
+    // =======================================
 
     const savedClasses =
       JSON.parse(
         localStorage.getItem("classes")
       ) || [];
 
+    const studentClasses =
+      savedClasses.filter(
+        (item) =>
+          String(item.studentId) ===
+          String(studentId)
+      );
 
-    if (loggedInStudent) {
-      const studentClasses =
-        savedClasses.filter(
-          (item) =>
-            String(item.studentId) ===
-            String(loggedInStudent.id)
-        );
-
-      setClasses(studentClasses);
-    } else {
-      setClasses([]);
-    }
+    setClasses(studentClasses);
   };
 
+  // =========================================
+  // STATISTICS
+  // =========================================
 
-  // ==============================
-  // STUDENT NAME
-  // ==============================
+  const scheduledClasses =
+    classes.filter(
+      (item) =>
+        item.scheduleDate &&
+        item.startTime &&
+        item.endTime
+    ).length;
 
-  const studentName =
-    student?.name || "Student";
+  const totalPaid =
+    payments.reduce(
+      (total, payment) => {
+        if (payment.status === "Paid") {
+          return (
+            total +
+            Number(payment.amount || 0)
+          );
+        }
 
+        return total;
+      },
+      0
+    );
 
-  // ==============================
-  // TEACHER
-  // ==============================
+  // =========================================
+  // NO LOGIN
+  // =========================================
 
-  const teacherName =
-    payment?.teacher || "No teacher assigned yet.";
+  if (!student) {
+    return (
+      <div className="student-dashboard">
 
+        <StudentSidebar />
 
-  // ==============================
-  // PLAN
-  // ==============================
+        <main className="student-main">
 
-  const planName =
-    payment?.plan || "No active plan.";
+          <div className="student-topbar">
 
+            <div>
+              <h1>
+                Student Dashboard
+              </h1>
 
-  // ==============================
-  // PAYMENT STATUS
-  // ==============================
+              <p>
+                Please login to continue.
+              </p>
+            </div>
 
-  const paymentStatus =
-    payment?.status || "No payment";
+          </div>
 
+          <div
+            className="student-welcome-card"
+            style={{
+              marginTop: "30px",
+              textAlign: "center",
+            }}
+          >
+
+            <div
+              style={{
+                fontSize: "50px",
+                marginBottom: "15px",
+              }}
+            >
+              🔐
+            </div>
+
+            <h2>
+              Please Login
+            </h2>
+
+            <p>
+              Login as a student to view
+              your dashboard.
+            </p>
+
+            <Link
+              to="/login"
+              className="auth-button"
+              style={{
+                display: "inline-block",
+                marginTop: "15px",
+                textDecoration: "none",
+              }}
+            >
+              Login
+            </Link>
+
+          </div>
+
+        </main>
+
+      </div>
+    );
+  }
+
+  // =========================================
+  // DASHBOARD
+  // =========================================
 
   return (
     <div className="student-dashboard">
 
+      {/* =====================================
+          COMMON SIDEBAR
+      ===================================== */}
 
-      {/* =================================
-          SIDEBAR
-      ================================= */}
-
-      <aside className="student-sidebar">
-
-        {/* Logo */}
-
-        <div className="student-logo">
-          TuitionWeb
-        </div>
+      <StudentSidebar />
 
 
-        {/* Navigation */}
-
-        <nav className="student-nav">
-
-          <Link
-            to="/student/dashboard"
-            className="active"
-          >
-            Dashboard
-          </Link>
-
-
-          <Link to="/student/teachers">
-            Find Teachers
-          </Link>
-
-
-          <Link to="/student/teacher">
-            My Teacher
-          </Link>
-
-
-          <Link to="/student/classes">
-            My Classes
-          </Link>
-
-
-          <Link to="/student/schedule">
-            Schedule
-          </Link>
-
-
-          <Link to="/student/plan">
-            Monthly Plan
-          </Link>
-
-
-          <Link to="/student/payments">
-            Payments
-          </Link>
-
-
-          <Link to="/student/messages">
-            Messages
-          </Link>
-
-
-          <Link to="/student/progress">
-            Learning Progress
-          </Link>
-
-
-          <Link to="/student/profile">
-            Profile
-          </Link>
-
-        </nav>
-
-
-        {/* Logout */}
-
-        <div className="student-logout">
-
-          <Link to="/login">
-            Logout
-          </Link>
-
-        </div>
-
-      </aside>
-
-
-
-      {/* =================================
+      {/* =====================================
           MAIN CONTENT
-      ================================= */}
+      ===================================== */}
 
       <main className="student-main">
 
-
-        {/* =================================
+        {/* ===================================
             TOP BAR
-        ================================= */}
+        =================================== */}
 
         <div className="student-topbar">
 
@@ -222,26 +255,38 @@ function StudentDashboard() {
             </h1>
 
             <p>
-              Welcome back, {studentName}! Let's continue your learning journey.
+              Welcome back,{" "}
+              {student.name ||
+                student.studentName ||
+                "Student"}
+              !
             </p>
 
           </div>
 
 
-          {/* Student Profile */}
+          {/* PROFILE */}
 
           <div className="student-profile">
 
             <div className="student-avatar">
-              {studentName
+
+              {(
+                student.name ||
+                student.studentName ||
+                "S"
+              )
                 .charAt(0)
                 .toUpperCase()}
+
             </div>
 
             <div className="student-profile-info">
 
               <strong>
-                {studentName}
+                {student.name ||
+                  student.studentName ||
+                  "Student"}
               </strong>
 
               <span>
@@ -255,209 +300,304 @@ function StudentDashboard() {
         </div>
 
 
+        {/* ===================================
+            WELCOME CARD
+        =================================== */}
 
-        {/* =================================
-            DASHBOARD CARDS
-        ================================= */}
+        <div className="student-welcome-card">
 
-        <div className="dashboard-cards">
+          <div>
 
+            <span
+              style={{
+                display: "inline-block",
+                padding: "6px 12px",
+                background: "#eaf2ff",
+                color: "#2563eb",
+                borderRadius: "20px",
+                fontSize: "13px",
+                fontWeight: "600",
+                marginBottom: "10px",
+              }}
+            >
+              🎓 Student Dashboard
+            </span>
 
-          {/* =================================
-              MY TEACHER
-          ================================= */}
-
-          <div className="dashboard-card">
-
-            <div className="dashboard-card-icon">
-              👨‍🏫
-            </div>
-
-            <h3>
-              My Teacher
-            </h3>
-
-            <p>
-              {teacherName}
-            </p>
-
-            {payment && (
-              <small>
-                {payment.subject || "Subject"}
-              </small>
-            )}
-
-          </div>
-
-
-
-          {/* =================================
-              MY CLASSES
-          ================================= */}
-
-          <div className="dashboard-card">
-
-            <div className="dashboard-card-icon">
-              📚
-            </div>
-
-            <h3>
-              My Classes
-            </h3>
+            <h2>
+              Welcome,{" "}
+              {student.name ||
+                student.studentName ||
+                "Student"}!
+            </h2>
 
             <p>
-              {classes.length}{" "}
-              {classes.length === 1
-                ? "class"
-                : "classes"}{" "}
-              scheduled.
+              Manage your teachers, classes,
+              schedule, monthly plans and
+              payments from here.
             </p>
-
-          </div>
-
-
-
-          {/* =================================
-              MONTHLY PLAN
-          ================================= */}
-
-          <div className="dashboard-card">
-
-            <div className="dashboard-card-icon">
-              💳
-            </div>
-
-            <h3>
-              Monthly Plan
-            </h3>
-
-            <p>
-              {planName}
-            </p>
-
-            {payment && (
-              <small>
-                ₹
-                {Number(
-                  payment.amount || 0
-                ).toLocaleString("en-IN")}{" "}
-                / month
-              </small>
-            )}
-
-          </div>
-
-
-
-          {/* =================================
-              LEARNING PROGRESS
-          ================================= */}
-
-          <div className="dashboard-card">
-
-            <div className="dashboard-card-icon">
-              📊
-            </div>
-
-            <h3>
-              Learning Progress
-            </h3>
-
-            <p>
-              0% completed.
-            </p>
-
-            <small>
-              Progress tracking coming soon.
-            </small>
 
           </div>
 
         </div>
 
 
+        {/* ===================================
+            STATISTICS
+        =================================== */}
 
-        {/* =================================
-            PAYMENT STATUS
-        ================================= */}
+        <div className="student-statistics">
 
-        {payment && (
+          {/* MY TEACHER */}
 
-          <div className="student-dashboard-section">
+          <div className="student-stat-card">
+
+            <span>
+              👨‍🏫
+            </span>
+
+            <div>
+
+              <p>
+                My Teacher
+              </p>
+
+              <h2
+                style={{
+                  fontSize: "18px",
+                }}
+              >
+                {teacher
+                  ? teacher.name
+                  : "Not Assigned"}
+              </h2>
+
+            </div>
+
+          </div>
+
+
+          {/* MY CLASSES */}
+
+          <div className="student-stat-card">
+
+            <span>
+              📚
+            </span>
+
+            <div>
+
+              <p>
+                My Classes
+              </p>
+
+              <h2>
+                {classes.length}
+              </h2>
+
+            </div>
+
+          </div>
+
+
+          {/* SCHEDULED */}
+
+          <div className="student-stat-card">
+
+            <span>
+              📅
+            </span>
+
+            <div>
+
+              <p>
+                Scheduled
+              </p>
+
+              <h2>
+                {scheduledClasses}
+              </h2>
+
+            </div>
+
+          </div>
+
+
+          {/* TOTAL PAID */}
+
+          <div className="student-stat-card">
+
+            <span>
+              ₹
+            </span>
+
+            <div>
+
+              <p>
+                Total Paid
+              </p>
+
+              <h2>
+                ₹
+                {totalPaid.toLocaleString(
+                  "en-IN"
+                )}
+              </h2>
+
+            </div>
+
+          </div>
+
+        </div>
+
+
+        {/* ===================================
+            CURRENT TEACHER
+        =================================== */}
+
+        {teacher ? (
+
+          <div
+            className="student-dashboard-section"
+            style={{
+              marginTop: "25px",
+            }}
+          >
 
             <div className="student-section-header">
 
               <div>
 
                 <h2>
-                  Current Subscription
+                  My Teacher
                 </h2>
 
                 <p>
-                  Your current learning plan.
+                  Your currently assigned
+                  teacher.
+                </p>
+
+              </div>
+
+              <Link
+                to="/student/teacher"
+                className="auth-button"
+                style={{
+                  textDecoration: "none",
+                }}
+              >
+                View Teacher
+              </Link>
+
+            </div>
+
+
+            <div
+              style={{
+                padding: "20px",
+                background: "#f8fafc",
+                borderRadius: "12px",
+                display: "flex",
+                alignItems: "center",
+                gap: "18px",
+                flexWrap: "wrap",
+              }}
+            >
+
+              <div
+                style={{
+                  width: "60px",
+                  height: "60px",
+                  borderRadius: "15px",
+                  background: "#eef4ff",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  fontSize: "30px",
+                }}
+              >
+                👨‍🏫
+              </div>
+
+              <div>
+
+                <h3
+                  style={{
+                    margin: "0 0 5px",
+                  }}
+                >
+                  {teacher.name}
+                </h3>
+
+                <p
+                  style={{
+                    margin: 0,
+                    color: "#718096",
+                  }}
+                >
+                  {teacher.subject}
+                </p>
+
+                <p
+                  style={{
+                    margin:
+                      "5px 0 0",
+                    color: "#2563eb",
+                  }}
+                >
+                  📦 {teacher.plan}
                 </p>
 
               </div>
 
             </div>
 
+          </div>
 
-            <div className="student-subscription-card">
+        ) : (
 
+          <div
+            className="student-dashboard-section"
+            style={{
+              marginTop: "25px",
+            }}
+          >
 
-              <div>
+            <div
+              style={{
+                textAlign: "center",
+                padding: "25px",
+              }}
+            >
 
-                <span>
-                  Plan
-                </span>
-
-                <strong>
-                  {payment.plan}
-                </strong>
-
+              <div
+                style={{
+                  fontSize: "45px",
+                  marginBottom: "10px",
+                }}
+              >
+                👨‍🏫
               </div>
 
+              <h2>
+                No Teacher Assigned
+              </h2>
 
-              <div>
+              <p>
+                Find a teacher and choose a
+                monthly plan to start learning.
+              </p>
 
-                <span>
-                  Teacher
-                </span>
-
-                <strong>
-                  {payment.teacher}
-                </strong>
-
-              </div>
-
-
-              <div>
-
-                <span>
-                  Amount
-                </span>
-
-                <strong>
-                  ₹
-                  {Number(
-                    payment.amount || 0
-                  ).toLocaleString("en-IN")}
-                </strong>
-
-              </div>
-
-
-              <div>
-
-                <span>
-                  Status
-                </span>
-
-                <strong className="student-paid-status">
-                  {paymentStatus}
-                </strong>
-
-              </div>
+              <Link
+                to="/student/teachers"
+                className="auth-button"
+                style={{
+                  display: "inline-block",
+                  marginTop: "10px",
+                  textDecoration: "none",
+                }}
+              >
+                Find a Teacher
+              </Link>
 
             </div>
 
@@ -466,102 +606,92 @@ function StudentDashboard() {
         )}
 
 
+        {/* ===================================
+            QUICK ACTIONS
+        =================================== */}
 
-        {/* =================================
-            MY CLASSES
-        ================================= */}
-
-        <div className="student-dashboard-section">
+        <div
+          className="student-dashboard-section"
+          style={{
+            marginTop: "25px",
+          }}
+        >
 
           <div className="student-section-header">
 
             <div>
 
               <h2>
-                My Classes
+                Quick Actions
               </h2>
 
               <p>
-                Your scheduled classes.
+                Quickly access your student
+                features.
               </p>
 
             </div>
-
-
-            <Link
-              to="/student/classes"
-              className="student-view-link"
-            >
-              View All
-            </Link>
 
           </div>
 
 
-          {classes.length === 0 ? (
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns:
+                "repeat(auto-fit, minmax(180px, 1fr))",
+              gap: "15px",
+            }}
+          >
 
-            <div className="student-empty-state">
-
-              <div>
-                📚
-              </div>
-
-              <h3>
-                No Classes Yet
-              </h3>
-
-              <p>
-                Your scheduled classes will appear here.
-              </p>
-
-            </div>
-
-          ) : (
-
-            <div className="student-classes-list">
-
-              {classes.map((item) => (
-
-                <div
-                  className="student-class-item"
-                  key={item.id}
-                >
-
-                  <div className="student-class-icon">
-                    📚
-                  </div>
+            <Link
+              to="/student/teachers"
+              className="auth-button"
+              style={{
+                textDecoration: "none",
+                textAlign: "center",
+              }}
+            >
+              👨‍🏫 Find Teachers
+            </Link>
 
 
-                  <div className="student-class-info">
-
-                    <strong>
-                      {item.subject}
-                    </strong>
-
-                    <span>
-                      Teacher: {item.teacher}
-                    </span>
-
-                    <span>
-                      {item.schedule}
-                    </span>
-
-                  </div>
+            <Link
+              to="/student/classes"
+              className="auth-button"
+              style={{
+                textDecoration: "none",
+                textAlign: "center",
+              }}
+            >
+              📚 My Classes
+            </Link>
 
 
-                  <div className="student-class-status">
+            <Link
+              to="/student/schedule"
+              className="auth-button"
+              style={{
+                textDecoration: "none",
+                textAlign: "center",
+              }}
+            >
+              📅 Schedule
+            </Link>
 
-                    {item.status}
 
-                  </div>
+            <Link
+              to="/student/payment"
+              className="auth-button"
+              style={{
+                textDecoration: "none",
+                textAlign: "center",
+              }}
+            >
+              💳 Payments
+            </Link>
 
-                </div>
-
-              ))}
-
-            </div>
-
-          )}
+          </div>
 
         </div>
 

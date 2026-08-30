@@ -1,217 +1,117 @@
+
 import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+import StudentSidebar from "./StudentSidebar";
 
 function MyClasses() {
   const [classes, setClasses] = useState([]);
 
+  // =========================================
+  // LOAD CLASSES
+  // =========================================
+
   useEffect(() => {
     loadClasses();
+
+    const handleFocus = () => {
+      loadClasses();
+    };
+
+    window.addEventListener("focus", handleFocus);
+
+    return () => {
+      window.removeEventListener("focus", handleFocus);
+    };
   }, []);
 
+  // =========================================
+  // LOAD STUDENT CLASSES
+  // =========================================
+
   const loadClasses = () => {
-    // =========================================
-    // GET LOGGED-IN STUDENT
-    // =========================================
-
-    const loggedInStudent =
-      JSON.parse(
-        localStorage.getItem("loggedInStudent")
-      );
-
-    // =========================================
-    // GET CLASSES
-    // =========================================
+    const loggedInStudent = JSON.parse(
+      localStorage.getItem("loggedInStudent")
+    );
 
     const savedClasses =
       JSON.parse(
         localStorage.getItem("classes")
       ) || [];
 
-    // =========================================
-    // GET TEACHER SCHEDULES
-    // =========================================
-
-    const savedSchedules =
-      JSON.parse(
-        localStorage.getItem(
-          "teacherSchedules"
-        )
-      ) || [];
-
-
     if (!loggedInStudent) {
       setClasses([]);
       return;
     }
 
+    const studentId =
+      loggedInStudent.id ||
+      loggedInStudent.studentId;
 
-    // =========================================
+    // =======================================
     // FIND STUDENT CLASSES
-    // =========================================
+    // =======================================
 
-    const studentClasses =
-      savedClasses.filter(
-        (item) =>
+    const studentClasses = savedClasses.filter(
+      (item) => {
+        const sameStudentId =
+          item.studentId &&
+          studentId &&
           String(item.studentId) ===
-            String(loggedInStudent.id) ||
-          item.student ===
-            loggedInStudent.name ||
-          item.studentName ===
-            loggedInStudent.name
-      );
+            String(studentId);
 
-
-    // =========================================
-    // CONNECT SCHEDULE TO CLASS
-    // =========================================
-
-    const classesWithSchedule =
-      studentClasses.map((item) => {
-
-        const classSchedules =
-          savedSchedules.filter(
-            (schedule) =>
-              String(schedule.classId) ===
-              String(item.id)
+        const sameStudentName =
+          loggedInStudent.name &&
+          (
+            item.student ===
+              loggedInStudent.name ||
+            item.studentName ===
+              loggedInStudent.name
           );
 
-
-        // Get first schedule
-        const schedule =
-          classSchedules.length > 0
-            ? classSchedules[0]
-            : null;
-
-
-        return {
-          ...item,
-
-          scheduleDate:
-            schedule?.date || "",
-
-          scheduleTime:
-            schedule?.time || "",
-
-          scheduleStatus:
-            schedule?.status ||
-            "",
-        };
-      });
-
-
-    setClasses(
-      classesWithSchedule
+        return (
+          sameStudentId ||
+          sameStudentName
+        );
+      }
     );
+
+    setClasses(studentClasses);
   };
 
+  // =========================================
+  // SCHEDULED CLASSES
+  // =========================================
+
+  const scheduledClasses = classes.filter(
+    (item) =>
+      item.scheduleDate &&
+      item.startTime &&
+      item.endTime
+  ).length;
 
   // =========================================
-  // REFRESH WHEN PAGE GETS FOCUS
+  // PAGE
   // =========================================
-
-  useEffect(() => {
-
-    const handleFocus = () => {
-      loadClasses();
-    };
-
-    window.addEventListener(
-      "focus",
-      handleFocus
-    );
-
-    return () => {
-      window.removeEventListener(
-        "focus",
-        handleFocus
-      );
-    };
-
-  }, []);
-
 
   return (
     <div className="student-dashboard">
-
 
       {/* =====================================
           SIDEBAR
       ===================================== */}
 
-      <aside className="student-sidebar">
-
-        <div className="student-logo">
-          TuitionWeb
-        </div>
-
-
-        <nav className="student-nav">
-
-          <Link to="/student/dashboard">
-            Dashboard
-          </Link>
-
-          <Link to="/student/teachers">
-            Find Teachers
-          </Link>
-
-          <Link to="/student/my-teacher">
-            My Teacher
-          </Link>
-
-          <Link
-            to="/student/my-classes"
-            className="active"
-          >
-            My Classes
-          </Link>
-
-          <Link to="/student/schedule">
-            Schedule
-          </Link>
-
-          <Link to="/student/plan">
-            Monthly Plan
-          </Link>
-
-          <Link to="/student/payment">
-            Payments
-          </Link>
-
-          <Link to="/student/messages">
-            Messages
-          </Link>
-
-          <Link to="/student/progress">
-            Learning Progress
-          </Link>
-
-          <Link to="/student/profile">
-            Profile
-          </Link>
-
-        </nav>
-
-
-        <div className="student-logout">
-
-          <Link to="/login">
-            Logout
-          </Link>
-
-        </div>
-
-      </aside>
+      <StudentSidebar />
 
 
       {/* =====================================
-          MAIN
+          MAIN CONTENT
       ===================================== */}
 
       <main className="student-main">
 
-
-        {/* HEADER */}
+        {/* ===================================
+            HEADER
+        =================================== */}
 
         <div className="student-topbar">
 
@@ -222,7 +122,8 @@ function MyClasses() {
             </h1>
 
             <p>
-              View your classes and schedules.
+              View your classes, schedules and
+              online meeting links.
             </p>
 
           </div>
@@ -230,11 +131,13 @@ function MyClasses() {
         </div>
 
 
-        {/* =====================================
-            CLASS COUNT
-        ===================================== */}
+        {/* ===================================
+            STATISTICS
+        =================================== */}
 
         <div className="student-statistics">
+
+          {/* TOTAL CLASSES */}
 
           <div className="student-stat-card">
 
@@ -256,12 +159,35 @@ function MyClasses() {
 
           </div>
 
+
+          {/* SCHEDULED */}
+
+          <div className="student-stat-card">
+
+            <span>
+              📅
+            </span>
+
+            <div>
+
+              <p>
+                Scheduled
+              </p>
+
+              <h2>
+                {scheduledClasses}
+              </h2>
+
+            </div>
+
+          </div>
+
         </div>
 
 
-        {/* =====================================
+        {/* ===================================
             EMPTY STATE
-        ===================================== */}
+        =================================== */}
 
         {classes.length === 0 ? (
 
@@ -270,6 +196,7 @@ function MyClasses() {
             <div
               style={{
                 fontSize: "45px",
+                marginBottom: "15px",
               }}
             >
               📚
@@ -280,7 +207,7 @@ function MyClasses() {
             </h2>
 
             <p>
-              Your teacher's classes will
+              Classes assigned to you will
               appear here.
             </p>
 
@@ -306,36 +233,49 @@ function MyClasses() {
 
           <div className="student-class-list">
 
-            {classes.map(
-              (item) => (
+            {classes.map((item) => {
+
+              const isScheduled =
+                item.scheduleDate &&
+                item.startTime &&
+                item.endTime;
+
+              return (
 
                 <div
                   className="student-class-card"
                   key={item.id}
                 >
 
-                  {/* ICON */}
+                  {/* =================================
+                      CLASS ICON
+                  ================================= */}
 
                   <div className="student-class-icon">
                     📚
                   </div>
 
 
-                  {/* INFORMATION */}
+                  {/* =================================
+                      CLASS INFORMATION
+                  ================================= */}
 
                   <div className="student-class-info">
 
                     <h2>
-                      {item.name ||
-                        item.className ||
+                      {item.subject ||
+                        item.name ||
                         "Class"}
                     </h2>
 
 
                     <p>
                       👨‍🏫 Teacher:{" "}
-                      {item.teacher ||
-                        "Unknown Teacher"}
+                      <strong>
+                        {item.teacher ||
+                          item.teacherName ||
+                          "Unknown Teacher"}
+                      </strong>
                     </p>
 
 
@@ -346,50 +286,124 @@ function MyClasses() {
                     </p>
 
 
-                    {/* SCHEDULE */}
+                    {/* PLAN */}
 
-                    {item.scheduleDate ? (
+                    {item.plan && (
+
+                      <p>
+                        📦 Plan:{" "}
+                        <strong>
+                          {item.plan}
+                        </strong>
+                      </p>
+
+                    )}
+
+
+                    {/* =================================
+                        SCHEDULE
+                    ================================= */}
+
+                    {isScheduled ? (
 
                       <div
                         style={{
-                          marginTop: "10px",
+                          marginTop: "15px",
+                          padding: "15px",
+                          background: "#f8fafc",
+                          borderRadius: "10px",
                         }}
                       >
 
                         <p>
                           📅 Date:{" "}
-                          {item.scheduleDate}
+                          <strong>
+                            {item.scheduleDate}
+                          </strong>
                         </p>
 
                         <p>
                           🕐 Time:{" "}
-                          {item.scheduleTime}
+                          <strong>
+                            {item.startTime}
+                            {" - "}
+                            {item.endTime}
+                          </strong>
                         </p>
 
-                        <p>
-                          Status:{" "}
-                          {item.scheduleStatus ||
-                            "Scheduled"}
-                        </p>
+
+                        {/* =================================
+                            MEETING LINK
+                        ================================= */}
+
+                        {item.meetingLink ? (
+
+                          <a
+                            href={item.meetingLink}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            style={{
+                              display:
+                                "inline-block",
+                              marginTop: "10px",
+                              padding:
+                                "10px 18px",
+                              background:
+                                "#2563eb",
+                              color:
+                                "#ffffff",
+                              borderRadius:
+                                "8px",
+                              textDecoration:
+                                "none",
+                              fontWeight:
+                                "600",
+                            }}
+                          >
+                            🎥 Join Class
+                          </a>
+
+                        ) : (
+
+                          <p
+                            style={{
+                              color:
+                                "#64748b",
+                              marginTop:
+                                "10px",
+                            }}
+                          >
+                            🎥 Meeting link not
+                            added yet.
+                          </p>
+
+                        )}
 
                       </div>
 
                     ) : (
 
-                      <p
+                      <div
                         style={{
-                          marginTop: "10px",
+                          marginTop: "12px",
+                          padding: "12px",
+                          background: "#fef3c7",
+                          borderRadius: "8px",
+                          color: "#92400e",
                         }}
                       >
-                        📅 Not scheduled yet
-                      </p>
+                        📅 Teacher has not
+                        scheduled this class yet.
+                      </div>
 
                     )}
 
                   </div>
 
 
-                  {/* CLASS STATUS */}
+                  {/* =================================
+                      CLASS STATUS
+                  ================================= */}
 
                   <div className="student-class-status">
 
@@ -402,8 +416,9 @@ function MyClasses() {
 
                 </div>
 
-              )
-            )}
+              );
+
+            })}
 
           </div>
 

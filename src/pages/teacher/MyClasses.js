@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 
@@ -5,193 +6,139 @@ function MyClasses() {
   const [classes, setClasses] = useState([]);
   const [selectedClass, setSelectedClass] = useState(null);
 
-  const [date, setDate] = useState("");
+  const [scheduleDate, setScheduleDate] = useState("");
   const [startTime, setStartTime] = useState("");
   const [endTime, setEndTime] = useState("");
+  const [meetingLink, setMeetingLink] = useState("");
 
   useEffect(() => {
     loadClasses();
   }, []);
 
-  // =========================================
-  // LOAD TEACHER CLASSES
-  // =========================================
-
-  function loadClasses() {
-    const teacher = JSON.parse(
+  // Load classes assigned to logged-in teacher
+  const loadClasses = () => {
+    const loggedInTeacher = JSON.parse(
       localStorage.getItem("loggedInTeacher")
     );
 
     const allClasses =
-      JSON.parse(
-        localStorage.getItem("classes")
-      ) || [];
+      JSON.parse(localStorage.getItem("classes")) || [];
 
-    if (!teacher) {
+    if (!loggedInTeacher) {
       setClasses([]);
       return;
     }
 
-    const myClasses = allClasses.filter(
-      function (item) {
-        return (
-          String(item.teacherId) ===
-            String(teacher.id) ||
-          item.teacher === teacher.name
-        );
-      }
+    const teacherClasses = allClasses.filter(
+      (item) =>
+        String(item.teacherId) ===
+        String(loggedInTeacher.id)
     );
 
-    setClasses(myClasses);
-  }
+    setClasses(teacherClasses);
+  };
 
-  // =========================================
-  // OPEN SCHEDULE MODAL
-  // =========================================
-
-  function openSchedule(classItem) {
+  // Open schedule form
+  const openSchedule = (classItem) => {
     setSelectedClass(classItem);
 
-    setDate(
-      classItem.scheduleDate || ""
-    );
+    setScheduleDate(classItem.scheduleDate || "");
+    setStartTime(classItem.startTime || "");
+    setEndTime(classItem.endTime || "");
+    setMeetingLink(classItem.meetingLink || "");
+  };
 
-    setStartTime(
-      classItem.startTime || ""
-    );
+  // Close schedule form
+  const closeSchedule = () => {
+    setSelectedClass(null);
+    setScheduleDate("");
+    setStartTime("");
+    setEndTime("");
+    setMeetingLink("");
+  };
 
-    setEndTime(
-      classItem.endTime || ""
-    );
-  }
-
-  // =========================================
-  // SAVE SCHEDULE
-  // =========================================
-
-  function saveSchedule() {
-    if (!selectedClass) {
+  // Save schedule
+  const saveSchedule = () => {
+    if (!scheduleDate) {
+      alert("Please select a date.");
       return;
     }
 
-    if (!date || !startTime || !endTime) {
-      alert("Please select date and time.");
+    if (!startTime) {
+      alert("Please select start time.");
+      return;
+    }
+
+    if (!endTime) {
+      alert("Please select end time.");
+      return;
+    }
+
+    if (!meetingLink.trim()) {
+      alert("Please enter the video meeting link.");
       return;
     }
 
     if (startTime >= endTime) {
-      alert(
-        "End time must be later than start time."
-      );
+      alert("End time must be later than start time.");
       return;
     }
 
     const allClasses =
-      JSON.parse(
-        localStorage.getItem("classes")
-      ) || [];
+      JSON.parse(localStorage.getItem("classes")) || [];
 
-    const updatedClasses =
-      allClasses.map(
-        function (item) {
+    const updatedClasses = allClasses.map((item) => {
+      if (
+        String(item.id) ===
+        String(selectedClass.id)
+      ) {
+        return {
+          ...item,
 
-          if (
-            String(item.id) ===
-            String(selectedClass.id)
-          ) {
-            return {
-              ...item,
+          scheduleDate: scheduleDate,
 
-              scheduleDate: date,
+          startTime: startTime,
 
-              startTime: startTime,
+          endTime: endTime,
 
-              endTime: endTime,
+          meetingLink: meetingLink.trim(),
 
-              schedule:
-                date +
-                " - " +
-                startTime +
-                " to " +
-                endTime,
+          schedule:
+            scheduleDate +
+            " - " +
+            startTime +
+            " to " +
+            endTime,
 
-              scheduleSetBy:
-                "Teacher",
-            };
-          }
+          scheduleSetBy: "Teacher",
+        };
+      }
 
-          return item;
-        }
-      );
+      return item;
+    });
 
     localStorage.setItem(
       "classes",
-      JSON.stringify(
-        updatedClasses
-      )
+      JSON.stringify(updatedClasses)
     );
 
-    setSelectedClass(null);
-    setDate("");
-    setStartTime("");
-    setEndTime("");
+    alert("Schedule saved successfully!");
 
+    closeSchedule();
     loadClasses();
+  };
 
-    alert(
-      "Schedule saved successfully!"
-    );
-  }
-
-  // =========================================
-  // CLOSE MODAL
-  // =========================================
-
-  function cancelSchedule() {
-    setSelectedClass(null);
-
-    setDate("");
-    setStartTime("");
-    setEndTime("");
-  }
-
-  // =========================================
-  // SCHEDULE COUNT
-  // =========================================
-
-  const scheduledCount =
-    classes.filter(
-      function (item) {
-        return (
-          item.scheduleDate &&
-          item.startTime &&
-          item.endTime
-        );
-      }
-    ).length;
-
-  // =========================================
-  // CLOSE MODAL WHEN CLICKING BACKGROUND
-  // =========================================
-
-  function handleModalBackgroundClick(e) {
-    if (
-      e.target === e.currentTarget
-    ) {
-      cancelSchedule();
-    }
-  }
-
-  // =========================================
-  // PAGE
-  // =========================================
+  const scheduledClasses = classes.filter(
+    (item) =>
+      item.scheduleDate &&
+      item.startTime &&
+      item.endTime
+  ).length;
 
   return (
     <div className="teacher-dashboard">
 
-      {/* =====================================
-          SIDEBAR
-      ===================================== */}
+      {/* SIDEBAR */}
 
       <aside className="teacher-sidebar">
 
@@ -220,10 +167,6 @@ function MyClasses() {
             Schedule
           </Link>
 
-          <Link to="/teacher/payments">
-            Payments
-          </Link>
-
           <Link to="/teacher/messages">
             Messages
           </Link>
@@ -249,13 +192,11 @@ function MyClasses() {
       </aside>
 
 
-      {/* =====================================
-          MAIN
-      ===================================== */}
+      {/* MAIN CONTENT */}
 
       <main className="teacher-main">
 
-        {/* TOPBAR */}
+        {/* HEADER */}
 
         <div className="teacher-topbar">
 
@@ -274,9 +215,7 @@ function MyClasses() {
         </div>
 
 
-        {/* =====================================
-            STATISTICS
-        ===================================== */}
+        {/* STATISTICS */}
 
         <div className="teacher-statistics">
 
@@ -314,7 +253,7 @@ function MyClasses() {
               </p>
 
               <h2>
-                {scheduledCount}
+                {scheduledClasses}
               </h2>
 
             </div>
@@ -335,8 +274,7 @@ function MyClasses() {
               </p>
 
               <h2>
-                {classes.length -
-                  scheduledCount}
+                {classes.length - scheduledClasses}
               </h2>
 
             </div>
@@ -346,9 +284,7 @@ function MyClasses() {
         </div>
 
 
-        {/* =====================================
-            CLASSES
-        ===================================== */}
+        {/* CLASS LIST */}
 
         {classes.length === 0 ? (
 
@@ -376,109 +312,145 @@ function MyClasses() {
 
         ) : (
 
-          <div className="teacher-class-list">
+          <div className="teacher-students-list">
 
-            {classes.map(
-              function (item) {
+            {classes.map((item) => {
 
-                const isScheduled =
-                  item.scheduleDate &&
-                  item.startTime &&
-                  item.endTime;
+              const isScheduled =
+                item.scheduleDate &&
+                item.startTime &&
+                item.endTime;
 
-                return (
+              return (
+                <div
+                  className="teacher-student-card"
+                  key={item.id}
+                >
 
-                  <div
-                    className="teacher-class-card"
-                    key={item.id}
-                  >
+                  {/* ICON */}
 
-                    {/* CLASS ICON */}
-
-                    <div className="teacher-class-icon">
-                      📚
-                    </div>
+                  <div className="teacher-student-avatar">
+                    📚
+                  </div>
 
 
-                    {/* CLASS INFORMATION */}
+                  {/* INFORMATION */}
 
-                    <div className="teacher-class-info">
+                  <div className="teacher-student-info">
 
-                      <h2>
-                        {item.name ||
-                          item.className ||
-                          item.subject ||
-                          "Class"}
-                      </h2>
+                    <h2>
+                      {item.subject || "Class"}
+                    </h2>
 
-                      <p>
-                        Subject:{" "}
-                        {item.subject ||
-                          "Not specified"}
-                      </p>
+                    <p>
+                      Student:{" "}
+                      <strong>
+                        {item.student || "Student"}
+                      </strong>
+                    </p>
 
-                      <p>
-                        Student:{" "}
-                        {item.student ||
-                          item.studentName ||
-                          "Not assigned"}
-                      </p>
+                    <p>
+                      Subject:{" "}
+                      {item.subject || "Not specified"}
+                    </p>
 
-                      <p>
+                    <div className="teacher-student-meta">
+
+                      <span>
                         Status:{" "}
-                        {item.status ||
-                          "Active"}
-                      </p>
-
-                      <p>
-                        Schedule:{" "}
-
-                        {isScheduled
-                          ? item.schedule
-                          : "Not scheduled yet"}
-                      </p>
-
-                    </div>
-
-
-                    {/* STATUS + BUTTON */}
-
-                    <div className="teacher-class-status">
-
-                      <span
-                        style={{
-                          display: "block",
-                          marginBottom: "10px",
-                        }}
-                      >
-                        {isScheduled
-                          ? "Scheduled"
-                          : "Needs Schedule"}
+                        <strong>
+                          {item.status || "Active"}
+                        </strong>
                       </span>
 
-                      <button
-                        type="button"
-                        className="create-class-button"
-                        onClick={
-                          function () {
-                            openSchedule(
-                              item
-                            );
-                          }
-                        }
-                      >
+                      <span>
+                        Schedule:{" "}
                         {isScheduled
-                          ? "Edit Schedule"
-                          : "Set Schedule"}
-                      </button>
+                          ? item.schedule
+                          : "Not scheduled"}
+                      </span>
 
                     </div>
+
+
+                    {/* MEETING LINK */}
+
+                    {item.meetingLink && (
+
+                      <div
+                        style={{
+                          marginTop: "12px",
+                        }}
+                      >
+
+                        <a
+                          href={item.meetingLink}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          style={{
+                            color: "#2563eb",
+                            fontWeight: "600",
+                            textDecoration: "none",
+                          }}
+                        >
+                          🎥 Open Meeting
+                        </a>
+
+                      </div>
+
+                    )}
 
                   </div>
 
-                );
-              }
-            )}
+
+                  {/* ACTION */}
+
+                  <div
+                    style={{
+                      display: "flex",
+                      flexDirection: "column",
+                      alignItems: "flex-end",
+                      gap: "12px",
+                    }}
+                  >
+
+                    <span
+                      style={{
+                        padding: "6px 12px",
+                        borderRadius: "20px",
+                        background: isScheduled
+                          ? "#dcfce7"
+                          : "#fef3c7",
+                        color: isScheduled
+                          ? "#166534"
+                          : "#92400e",
+                        fontWeight: "600",
+                        fontSize: "13px",
+                      }}
+                    >
+                      {isScheduled
+                        ? "Scheduled"
+                        : "Needs Schedule"}
+                    </span>
+
+
+                    <button
+                      type="button"
+                      className="create-class-button"
+                      onClick={() =>
+                        openSchedule(item)
+                      }
+                    >
+                      {isScheduled
+                        ? "Edit Schedule"
+                        : "Set Schedule"}
+                    </button>
+
+                  </div>
+
+                </div>
+              );
+            })}
 
           </div>
 
@@ -487,24 +459,25 @@ function MyClasses() {
       </main>
 
 
-      {/* =====================================
-          SCHEDULE MODAL
-      ===================================== */}
+      {/* SCHEDULE MODAL */}
 
       {selectedClass && (
 
         <div
-          onClick={
-            handleModalBackgroundClick
-          }
+          onClick={(event) => {
+            if (
+              event.target === event.currentTarget
+            ) {
+              closeSchedule();
+            }
+          }}
           style={{
             position: "fixed",
             top: 0,
             left: 0,
             right: 0,
             bottom: 0,
-            background:
-              "rgba(0, 0, 0, 0.55)",
+            background: "rgba(0, 0, 0, 0.55)",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
@@ -513,8 +486,6 @@ function MyClasses() {
           }}
         >
 
-          {/* MODAL CARD */}
-
           <div
             style={{
               width: "100%",
@@ -522,68 +493,70 @@ function MyClasses() {
               background: "#ffffff",
               borderRadius: "16px",
               padding: "30px",
+              boxSizing: "border-box",
               boxShadow:
                 "0 20px 60px rgba(0,0,0,0.25)",
-              position: "relative",
             }}
           >
-
-            {/* CLOSE BUTTON */}
-
-            <button
-              type="button"
-              onClick={cancelSchedule}
-              style={{
-                position: "absolute",
-                top: "15px",
-                right: "18px",
-                border: "none",
-                background: "transparent",
-                fontSize: "25px",
-                cursor: "pointer",
-              }}
-            >
-              ×
-            </button>
-
 
             {/* MODAL HEADER */}
 
             <div
               style={{
-                marginBottom: "25px",
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                marginBottom: "20px",
               }}
             >
 
-              <h2
-                style={{
-                  marginBottom: "8px",
-                }}
-              >
-                📅 Set Class Schedule
-              </h2>
+              <div>
 
-              <p
+                <h2
+                  style={{
+                    margin: "0 0 6px",
+                  }}
+                >
+                  📅 Set Class Schedule
+                </h2>
+
+                <p
+                  style={{
+                    margin: 0,
+                    color: "#64748b",
+                  }}
+                >
+                  Set date, time and video meeting link.
+                </p>
+
+              </div>
+
+
+              <button
+                type="button"
+                onClick={closeSchedule}
                 style={{
-                  margin: 0,
+                  border: "none",
+                  background: "transparent",
+                  fontSize: "28px",
+                  cursor: "pointer",
                   color: "#64748b",
                 }}
               >
-                Set the date and time for
-                this class.
-              </p>
+                ×
+              </button>
 
             </div>
 
 
-            {/* CLASS DETAILS */}
+            {/* CLASS INFORMATION */}
 
             <div
               style={{
                 background: "#f8fafc",
-                borderRadius: "10px",
                 padding: "15px",
-                marginBottom: "25px",
+                borderRadius: "10px",
+                marginBottom: "22px",
               }}
             >
 
@@ -595,8 +568,7 @@ function MyClasses() {
                 <strong>
                   Student:
                 </strong>{" "}
-                {selectedClass.student ||
-                  "Student"}
+                {selectedClass.student || "Student"}
               </p>
 
               <p
@@ -607,8 +579,7 @@ function MyClasses() {
                 <strong>
                   Subject:
                 </strong>{" "}
-                {selectedClass.subject ||
-                  "Subject"}
+                {selectedClass.subject || "Subject"}
               </p>
 
             </div>
@@ -634,22 +605,18 @@ function MyClasses() {
 
               <input
                 type="date"
-                value={date}
-                onChange={
-                  function (e) {
-                    setDate(
-                      e.target.value
-                    );
-                  }
+                value={scheduleDate}
+                onChange={(event) =>
+                  setScheduleDate(
+                    event.target.value
+                  )
                 }
                 style={{
                   width: "100%",
                   padding: "12px",
-                  border:
-                    "1px solid #cbd5e1",
+                  border: "1px solid #cbd5e1",
                   borderRadius: "8px",
-                  boxSizing:
-                    "border-box",
+                  boxSizing: "border-box",
                 }}
               />
 
@@ -662,11 +629,9 @@ function MyClasses() {
               style={{
                 display: "flex",
                 gap: "15px",
-                marginBottom: "25px",
+                marginBottom: "20px",
               }}
             >
-
-              {/* START */}
 
               <div
                 style={{
@@ -687,28 +652,22 @@ function MyClasses() {
                 <input
                   type="time"
                   value={startTime}
-                  onChange={
-                    function (e) {
-                      setStartTime(
-                        e.target.value
-                      );
-                    }
+                  onChange={(event) =>
+                    setStartTime(
+                      event.target.value
+                    )
                   }
                   style={{
                     width: "100%",
                     padding: "12px",
-                    border:
-                      "1px solid #cbd5e1",
+                    border: "1px solid #cbd5e1",
                     borderRadius: "8px",
-                    boxSizing:
-                      "border-box",
+                    boxSizing: "border-box",
                   }}
                 />
 
               </div>
 
-
-              {/* END */}
 
               <div
                 style={{
@@ -729,25 +688,71 @@ function MyClasses() {
                 <input
                   type="time"
                   value={endTime}
-                  onChange={
-                    function (e) {
-                      setEndTime(
-                        e.target.value
-                      );
-                    }
+                  onChange={(event) =>
+                    setEndTime(
+                      event.target.value
+                    )
                   }
                   style={{
                     width: "100%",
                     padding: "12px",
-                    border:
-                      "1px solid #cbd5e1",
+                    border: "1px solid #cbd5e1",
                     borderRadius: "8px",
-                    boxSizing:
-                      "border-box",
+                    boxSizing: "border-box",
                   }}
                 />
 
               </div>
+
+            </div>
+
+
+            {/* MEETING LINK */}
+
+            <div
+              style={{
+                marginBottom: "25px",
+              }}
+            >
+
+              <label
+                style={{
+                  display: "block",
+                  fontWeight: "600",
+                  marginBottom: "7px",
+                }}
+              >
+                🎥 Video Meeting Link
+              </label>
+
+              <input
+                type="url"
+                value={meetingLink}
+                onChange={(event) =>
+                  setMeetingLink(
+                    event.target.value
+                  )
+                }
+                placeholder="https://meet.google.com/..."
+                style={{
+                  width: "100%",
+                  padding: "12px",
+                  border: "1px solid #cbd5e1",
+                  borderRadius: "8px",
+                  boxSizing: "border-box",
+                }}
+              />
+
+              <small
+                style={{
+                  display: "block",
+                  marginTop: "7px",
+                  color: "#64748b",
+                }}
+              >
+                Add the Google Meet or other
+                video meeting link.
+              </small>
 
             </div>
 
@@ -764,16 +769,16 @@ function MyClasses() {
 
               <button
                 type="button"
+                onClick={closeSchedule}
                 className="cancel-class-button"
-                onClick={cancelSchedule}
               >
                 Cancel
               </button>
 
               <button
                 type="button"
-                className="create-class-button"
                 onClick={saveSchedule}
+                className="create-class-button"
               >
                 Save Schedule
               </button>
@@ -791,3 +796,4 @@ function MyClasses() {
 }
 
 export default MyClasses;
+

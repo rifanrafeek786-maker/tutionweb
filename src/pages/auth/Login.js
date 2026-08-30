@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 
@@ -25,10 +26,26 @@ function Login() {
     );
 
     if (student) {
+      // Make sure student always has an ID
+      const studentId =
+        student.id ||
+        student.studentId ||
+        `student-${Date.now()}`;
+
+      const loggedInStudent = {
+        ...student,
+        id: studentId,
+        studentId: studentId,
+        name:
+          student.name ||
+          student.studentName ||
+          "Student",
+      };
+
       // Save logged-in student
       localStorage.setItem(
         "loggedInStudent",
-        JSON.stringify(student)
+        JSON.stringify(loggedInStudent)
       );
 
       alert("Student login successful!");
@@ -52,7 +69,6 @@ function Login() {
     );
 
     if (teacher) {
-      // Save logged-in teacher
       localStorage.setItem(
         "loggedInTeacher",
         JSON.stringify(teacher)
@@ -60,7 +76,6 @@ function Login() {
 
       alert("Teacher login successful!");
 
-      // Teacher dashboard will be created next
       navigate("/teacher/dashboard");
       return;
     }
@@ -77,13 +92,9 @@ function Login() {
 
       <div className="auth-card">
 
-        {/* Header */}
-
         <div className="auth-header">
 
-          <h1>
-            Login
-          </h1>
+          <h1>Login</h1>
 
           <p>
             Login to your TuitionWeb account
@@ -91,18 +102,11 @@ function Login() {
 
         </div>
 
-
-        {/* Login Form */}
-
         <form onSubmit={handleSubmit}>
-
-          {/* Email */}
 
           <div className="form-group">
 
-            <label>
-              Email
-            </label>
+            <label>Email</label>
 
             <input
               type="email"
@@ -116,14 +120,9 @@ function Login() {
 
           </div>
 
-
-          {/* Password */}
-
           <div className="form-group">
 
-            <label>
-              Password
-            </label>
+            <label>Password</label>
 
             <input
               type="password"
@@ -137,9 +136,6 @@ function Login() {
 
           </div>
 
-
-          {/* Login Button */}
-
           <button
             className="auth-button"
             type="submit"
@@ -148,9 +144,6 @@ function Login() {
           </button>
 
         </form>
-
-
-        {/* Register */}
 
         <p className="auth-footer">
 
@@ -169,3 +162,4 @@ function Login() {
 }
 
 export default Login;
+

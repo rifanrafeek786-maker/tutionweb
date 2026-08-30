@@ -6,43 +6,50 @@ function TeacherSchedule() {
 
   useEffect(() => {
     loadSchedules();
+
+    const handleFocus = () => {
+      loadSchedules();
+    };
+
+    window.addEventListener("focus", handleFocus);
+
+    return () => {
+      window.removeEventListener("focus", handleFocus);
+    };
   }, []);
 
+  // =========================================
+  // LOAD TEACHER SCHEDULE
+  // =========================================
+
   const loadSchedules = () => {
-    const loggedInTeacher =
-      JSON.parse(
-        localStorage.getItem("loggedInTeacher")
-      );
+    const loggedInTeacher = JSON.parse(
+      localStorage.getItem("loggedInTeacher")
+    );
 
     const savedClasses =
-      JSON.parse(
-        localStorage.getItem("classes")
-      ) || [];
+      JSON.parse(localStorage.getItem("classes")) || [];
 
     if (!loggedInTeacher) {
       setSchedules([]);
       return;
     }
 
-    // Get only this teacher's classes
     const mySchedules = savedClasses.filter(
       (item) =>
-        (
-          String(item.teacherId) ===
-          String(loggedInTeacher.id)
-        ) &&
+        String(item.teacherId) ===
+          String(loggedInTeacher.id) &&
         item.scheduleDate &&
         item.startTime &&
         item.endTime
     );
 
-    // Sort by date and time
     mySchedules.sort((a, b) => {
       const first =
-        `${a.scheduleDate} ${a.startTime}`;
+        a.scheduleDate + " " + a.startTime;
 
       const second =
-        `${b.scheduleDate} ${b.startTime}`;
+        b.scheduleDate + " " + b.startTime;
 
       return first.localeCompare(second);
     });
@@ -50,33 +57,17 @@ function TeacherSchedule() {
     setSchedules(mySchedules);
   };
 
-  // Refresh when coming back to this page
-  useEffect(() => {
-    const handleFocus = () => {
-      loadSchedules();
-    };
+  // =========================================
+  // FORMAT DATE
+  // =========================================
 
-    window.addEventListener(
-      "focus",
-      handleFocus
-    );
-
-    return () => {
-      window.removeEventListener(
-        "focus",
-        handleFocus
-      );
-    };
-  }, []);
-
-  // Format date
   const formatDate = (date) => {
     if (!date) {
       return "Not scheduled";
     }
 
     const selectedDate =
-      new Date(`${date}T00:00:00`);
+      new Date(date + "T00:00:00");
 
     return selectedDate.toLocaleDateString(
       "en-IN",
@@ -88,6 +79,26 @@ function TeacherSchedule() {
       }
     );
   };
+
+  // =========================================
+  // GET UNIQUE STUDENTS
+  // =========================================
+
+  const uniqueStudents = new Set(
+    schedules.map(
+      (item) => item.studentId
+    )
+  ).size;
+
+  // =========================================
+  // GET UNIQUE SUBJECTS
+  // =========================================
+
+  const uniqueSubjects = new Set(
+    schedules.map(
+      (item) => item.subject
+    )
+  ).size;
 
   return (
     <div className="teacher-dashboard">
@@ -121,10 +132,6 @@ function TeacherSchedule() {
             className="active"
           >
             Schedule
-          </Link>
-
-          <Link to="/teacher/payments">
-            Payments
           </Link>
 
           <Link to="/teacher/messages">
@@ -218,14 +225,7 @@ function TeacherSchedule() {
               </p>
 
               <h2>
-                {
-                  new Set(
-                    schedules.map(
-                      (item) =>
-                        item.studentId
-                    )
-                  ).size
-                }
+                {uniqueStudents}
               </h2>
 
             </div>
@@ -246,14 +246,7 @@ function TeacherSchedule() {
               </p>
 
               <h2>
-                {
-                  new Set(
-                    schedules.map(
-                      (item) =>
-                        item.subject
-                    )
-                  ).size
-                }
+                {uniqueSubjects}
               </h2>
 
             </div>
@@ -264,7 +257,7 @@ function TeacherSchedule() {
 
 
         {/* =====================================
-            SCHEDULE
+            EMPTY STATE
         ===================================== */}
 
         {schedules.length === 0 ? (
@@ -306,6 +299,10 @@ function TeacherSchedule() {
 
         ) : (
 
+          /* ===================================
+             SCHEDULE LIST
+          =================================== */
+
           <div
             className="teacher-students-list"
             style={{
@@ -313,98 +310,136 @@ function TeacherSchedule() {
             }}
           >
 
-            {schedules.map(
-              (schedule) => (
+            {schedules.map((schedule) => (
 
-                <div
-                  className="teacher-student-card"
-                  key={schedule.id}
-                >
+              <div
+                className="teacher-student-card"
+                key={schedule.id}
+              >
 
-                  {/* ICON */}
+                {/* ICON */}
 
-                  <div className="teacher-student-avatar">
-                    📚
-                  </div>
-
-
-                  {/* CLASS INFORMATION */}
-
-                  <div className="teacher-student-info">
-
-                    <h2>
-                      {schedule.name ||
-                        schedule.className ||
-                        schedule.subject ||
-                        "Class"}
-                    </h2>
-
-                    <p>
-                      👨‍🎓 Student:{" "}
-                      <strong>
-                        {schedule.student ||
-                          schedule.studentName ||
-                          "Student"}
-                      </strong>
-                    </p>
-
-                    <p>
-                      📖 Subject:{" "}
-                      <strong>
-                        {schedule.subject ||
-                          "Not specified"}
-                      </strong>
-                    </p>
-
-                    <div
-                      className="teacher-student-meta"
-                    >
-
-                      <span>
-                        📅{" "}
-                        {formatDate(
-                          schedule.scheduleDate
-                        )}
-                      </span>
-
-                      <span>
-                        🕐{" "}
-                        {schedule.startTime}
-                        {" - "}
-                        {schedule.endTime}
-                      </span>
-
-                      <span>
-                        Status:{" "}
-                        <strong>
-                          {schedule.status ||
-                            "Active"}
-                        </strong>
-                      </span>
-
-                    </div>
-
-                  </div>
+                <div className="teacher-student-avatar">
+                  📚
+                </div>
 
 
-                  {/* SCHEDULE STATUS */}
+                {/* INFORMATION */}
 
-                  <div className="teacher-student-payment">
+                <div className="teacher-student-info">
 
+                  <h2>
+                    {schedule.subject ||
+                      "Class"}
+                  </h2>
+
+                  <p>
+                    👨‍🎓 Student:{" "}
                     <strong>
-                      Scheduled
+                      {schedule.student ||
+                        "Student"}
                     </strong>
+                  </p>
 
-                    <small>
-                      Set by Teacher
-                    </small>
+                  <p>
+                    📖 Subject:{" "}
+                    <strong>
+                      {schedule.subject ||
+                        "Not specified"}
+                    </strong>
+                  </p>
+
+
+                  {/* DATE + TIME */}
+
+                  <div
+                    className="teacher-student-meta"
+                  >
+
+                    <span>
+                      📅{" "}
+                      {formatDate(
+                        schedule.scheduleDate
+                      )}
+                    </span>
+
+                    <span>
+                      🕐{" "}
+                      {schedule.startTime}
+                      {" - "}
+                      {schedule.endTime}
+                    </span>
 
                   </div>
+
+
+                  {/* MEETING LINK */}
+
+                  {schedule.meetingLink ? (
+
+                    <a
+                      href={
+                        schedule.meetingLink
+                      }
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      style={{
+                        display:
+                          "inline-block",
+                        marginTop: "15px",
+                        padding:
+                          "10px 18px",
+                        background:
+                          "#2563eb",
+                        color:
+                          "#ffffff",
+                        borderRadius:
+                          "8px",
+                        textDecoration:
+                          "none",
+                        fontWeight:
+                          "600",
+                      }}
+                    >
+                      🎥 Join Meeting
+                    </a>
+
+                  ) : (
+
+                    <p
+                      style={{
+                        marginTop: "15px",
+                        color: "#64748b",
+                      }}
+                    >
+                      🎥 Meeting link not
+                      available.
+                    </p>
+
+                  )}
 
                 </div>
 
-              )
-            )}
+
+                {/* RIGHT SIDE */}
+
+                <div
+                  className="teacher-student-payment"
+                >
+
+                  <strong>
+                    Scheduled
+                  </strong>
+
+                  <small>
+                    Set by Teacher
+                  </small>
+
+                </div>
+
+              </div>
+
+            ))}
 
           </div>
 
